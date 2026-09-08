@@ -1,0 +1,33 @@
+# Данные — НЕ коммитим (большие CSV)
+data/*.csv
+data/*.CSV
+data/.csv
+*.csv
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Логи/артефакты
+*.log
+*.png
+catboost_info/
+experiments/logs/
+results_1000/
+
+# OpenCode зависимости и бинарники
+.opencode/node_modules/
+.opencode/package-lock.json
+opencode
+
+# ОС
+.DS_Store
+Thumbs.db
