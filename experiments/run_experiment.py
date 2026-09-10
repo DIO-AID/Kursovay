@@ -4,11 +4,16 @@ from src.preprocessing import build_preprocessor
 from src.evaluation import evaluate
 from src.model import build_model
 from src.stacking import train_stacking
+from src.feature_engineering import AdvancedFeatureTransformer
 
 from tuning.run_optuna_model import run_optuna_model
 from tuning.metrics import get_metric
 
 from experiments.feature_pipeline import process_features, select_features_with_shap
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def run_experiment(df, config):
@@ -16,13 +21,20 @@ def run_experiment(df, config):
     X = df.drop(columns=[config["target"]])
     y = df[config["target"]]
 
-    X = process_features(X, config.get("feature", False), config.get("shap", False), y)
+    use_feature = config.get("feature", False)
+    use_shap = config.get("shap", False)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    if config.get("shap", False):
+    if use_feature:
+        fe_transformer = AdvancedFeatureTransformer(verbose=False)
+        fe_transformer.fit(X_train)
+        X_train = fe_transformer.transform(X_train)
+        X_test = fe_transformer.transform(X_test)
+
+    if use_shap:
         top_features = select_features_with_shap(X_train, y_train)
         X_train = X_train[top_features]
         X_test = X_test[top_features]
@@ -33,7 +45,6 @@ def run_experiment(df, config):
         return train_stacking(X_train, X_test, y_train, y_test, preprocessor)
 
     if config.get("mode") == "optuna":
-
         model_class = config.get("model_class")
         search_space = config.get("search_space")
 

@@ -1,21 +1,22 @@
 """
-Production-ready feature engineering
+Production-ready feature engineering (SAFE — sklearn Transformer)
 Гарантии:
-- только scalar значения
-- только numeric dtype
-- защита от list/ndarray
-- совместимость с SHAP / sklearn Pipeline
+- fit ТОЛЬКО на train (нет data leakage)
+- transform на train/test одинаково
+- совместимость с Pipeline, SHAP, sklearn
 """
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import PowerTransformer
 from sklearn.kernel_approximation import RBFSampler
 import warnings
+import logging
 
 warnings.filterwarnings("ignore")
+logger = logging.getLogger(__name__)
 
-# ГЛОБАЛЬНАЯ КОНСТАНТА
 EPS = 1e-9
 
 
@@ -27,22 +28,18 @@ EPS = 1e-9
 def _fix_scalar(x):
     if isinstance(x, (list, tuple, set)):
         return np.nan
-
     if isinstance(x, np.ndarray):
         if x.size == 1:
             return float(x.item())
         return np.nan
-
     return x
 
 
 def force_scalar(df: pd.DataFrame) -> pd.DataFrame:
     df_result = df.copy()
-
     for col in df_result.columns:
         if df_result[col].dtype == "object":
             df_result[col] = df_result[col].map(_fix_scalar)
-
     return df_result
 
 
@@ -54,206 +51,195 @@ def assert_no_object(df: pd.DataFrame, stage="unknown"):
 
 def finalize_numeric(df: pd.DataFrame) -> pd.DataFrame:
     df_result = df.copy()
-
     for col in df_result.columns:
         df_result[col] = pd.to_numeric(df_result[col], errors="coerce")
-
     df_result = df_result.replace([np.inf, -np.inf], np.nan)
     df_result = df_result.fillna(0)
-
     return df_result
 
 
 # =========================================================
-# NUMERIC FEATURES (FIXED)
+# SKLEARN TRANSFORMER (FIX DATA LEAKAGE)
 # =========================================================
 
 
-def create_numeric_transforms(df, numeric_cols):
-    df_result = df.copy()
-    new_features = {}
+class AdvancedFeatureTransformer(BaseEstimator, TransformerMixin):
+    """
+    sklearn-совместимый трансформер для Feature Engineering.
+    fit() вызывается ТОЛЬКО на train.
+    transform() одинаково работает и на train, и на test.
+    """
 
-    for col in numeric_cols:
-        if col not in df_result.columns:
-            continue
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self._fitted = False
+        self._medians_ = None
+        self._power_transformers_ = {}
+        self._rbf_samplers_ = {}
+        self._numeric_cols_ = None
+        self._cat_cols_ = None
+        self._col_stds_ = None
+        self._col_means_ = None
 
-        series = pd.to_numeric(df_result[col], errors="coerce")
+    def fit(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        df = force_scalar(df)
 
-        std_val = series.std()
-        if std_val == 0 or pd.isna(std_val):
-            std_val = 1.0
+        self._numeric_cols_ = df.select_dtypes(include=[np.number]).columns.tolist()
+        self._cat_cols_ = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
-        # КЛЮЧЕВОЙ ФИКС — ограничение значений
-        safe_series = np.clip(series / std_val, -20, 20)
+        if self._numeric_cols_:
+            self._medians_ = df[self._numeric_cols_].median()
+            self._col_stds_ = df[self._numeric_cols_].std().replace(0, 1.0)
+            self._col_means_ = df[self._numeric_cols_].mean()
 
-        try:
-            # LOG
-            if (series > 0).all():
-                new_features[f"{col}_log1p"] = np.log1p(series)
-                new_features[f"{col}_log10"] = np.log10(series + EPS)
-            else:
-                min_val = series.min()
-                if min_val < 0:
-                    shifted = series - min_val + 1
-                    new_features[f"{col}_shifted_log1p"] = np.log1p(shifted)
+            for col in self._numeric_cols_:
+                series = df[col].to_frame()
+                std_val = self._col_stds_[col]
+                if std_val == 0 or pd.isna(std_val):
+                    std_val = 1.0
 
-            # POWERS
-            new_features[f"{col}_square"] = series**2
-            new_features[f"{col}_cube"] = series**3
-            new_features[f"{col}_sqrt"] = np.sqrt(np.abs(series))
-            new_features[f"{col}_cubert"] = np.cbrt(np.abs(series))
+                try:
+                    if (df[col] > 0).all():
+                        pt = PowerTransformer(method="box-cox")
+                    else:
+                        pt = PowerTransformer(method="yeo-johnson")
+                    pt.fit(series)
+                    self._power_transformers_[col] = pt
+                except Exception:
+                    pass
 
-            # FIX: безопасные экспоненты
-            new_features[f"{col}_exp"] = np.exp(safe_series)
-            new_features[f"{col}_exp_neg"] = np.exp(-safe_series)
+                try:
+                    rbf = RBFSampler(gamma=1.0 / std_val, n_components=1, random_state=42)
+                    rbf.fit(series)
+                    self._rbf_samplers_[col] = rbf
+                except Exception:
+                    pass
 
-            # NONLINEAR
-            new_features[f"{col}_sin"] = np.sin(series)
-            new_features[f"{col}_cos"] = np.cos(series)
-            new_features[f"{col}_sigmoid"] = 1 / (1 + np.exp(-safe_series))
-            new_features[f"{col}_tanh"] = np.tanh(safe_series)
+        self._fitted = True
+        return self
 
-            # STATS
-            mean_val = series.mean()
-            new_features[f"{col}_standardized"] = (series - mean_val) / std_val
+    def transform(self, X):
+        if not self._fitted:
+            raise RuntimeError("Transformer не fit(). Вызовите fit() на train.")
 
-            # FIX: rank строго [0,1]
-            rank = series.rank(pct=True)
-            new_features[f"{col}_rank"] = rank.clip(0, 1)
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        df = force_scalar(df)
 
-            new_features[f"{col}_abs"] = np.abs(series)
+        for col in self._numeric_cols_:
+            if col not in df.columns:
+                df[col] = 0.0
 
-            # POWER TRANSFORM
+        for col in self._cat_cols_:
+            if col not in df.columns:
+                df[col] = "missing"
+            df[col] = df[col].fillna("missing")
+
+        numeric_cols = [c for c in self._numeric_cols_ if c in df.columns]
+
+        if numeric_cols:
+            df[numeric_cols] = df[numeric_cols].fillna(self._medians_[numeric_cols])
+
+        for col in numeric_cols:
+            series = pd.to_numeric(df[col], errors="coerce")
+            std_val = self._col_stds_[col] if col in self._col_stds_ else 1.0
+            mean_val = self._col_means_[col] if col in self._col_means_ else 0.0
+
+            safe_series = np.clip(series / std_val, -20, 20)
+
+            new_features = {}
+
             try:
                 if (series > 0).all():
-                    pt = PowerTransformer(method="box-cox")
+                    new_features[f"{col}_log1p"] = np.log1p(series)
+                    new_features[f"{col}_log10"] = np.log10(series + EPS)
                 else:
-                    pt = PowerTransformer(method="yeo-johnson")
+                    min_val = series.min()
+                    if min_val < 0:
+                        shifted = series - min_val + 1
+                        new_features[f"{col}_shifted_log1p"] = np.log1p(shifted)
 
-                new_features[f"{col}_power"] = pt.fit_transform(
-                    series.to_frame()
-                ).ravel()
+                new_features[f"{col}_square"] = series**2
+                new_features[f"{col}_cube"] = series**3
+                new_features[f"{col}_sqrt"] = np.sqrt(np.abs(series))
+                new_features[f"{col}_cubert"] = np.cbrt(np.abs(series))
+                new_features[f"{col}_exp"] = np.exp(safe_series)
+                new_features[f"{col}_exp_neg"] = np.exp(-safe_series)
+                new_features[f"{col}_sin"] = np.sin(series)
+                new_features[f"{col}_cos"] = np.cos(series)
+                new_features[f"{col}_sigmoid"] = 1 / (1 + np.exp(-safe_series))
+                new_features[f"{col}_tanh"] = np.tanh(safe_series)
+                new_features[f"{col}_standardized"] = (series - mean_val) / std_val
+                new_features[f"{col}_rank"] = series.rank(pct=True).clip(0, 1)
+                new_features[f"{col}_abs"] = np.abs(series)
+
+                if col in self._power_transformers_:
+                    try:
+                        new_features[f"{col}_power"] = self._power_transformers_[col].transform(
+                            series.to_frame()
+                        ).ravel()
+                    except Exception:
+                        pass
+
+                if col in self._rbf_samplers_:
+                    try:
+                        new_features[f"{col}_rbf"] = self._rbf_samplers_[col].transform(
+                            series.to_frame()
+                        ).ravel()
+                    except Exception:
+                        pass
+
+                min_val, max_val = series.min(), series.max()
+                if max_val > min_val:
+                    new_features[f"{col}_normalized"] = (series - min_val) / (max_val - min_val)
+
+                new_features[f"{col}_above_median"] = (series > self._medians_[col]).astype(float)
+
             except Exception:
-                pass
+                continue
 
-            # RBF
-            try:
-                rbf = RBFSampler(gamma=1.0 / std_val, n_components=1, random_state=42)
-                new_features[f"{col}_rbf"] = rbf.fit_transform(
-                    series.to_frame()
-                ).ravel()
-            except Exception:
-                pass
+            if new_features:
+                new_df = pd.DataFrame(new_features, index=df.index)
+                df = pd.concat([df, new_df], axis=1)
 
-            # NORMALIZATION
-            min_val, max_val = series.min(), series.max()
-            if max_val > min_val:
-                new_features[f"{col}_normalized"] = (series - min_val) / (
-                    max_val - min_val
-                )
+        if numeric_cols:
+            row_mean = df[numeric_cols].mean(axis=1)
+            row_std = df[numeric_cols].std(axis=1).fillna(0)
+            row_min = df[numeric_cols].min(axis=1)
+            row_max = df[numeric_cols].max(axis=1)
 
-            # THRESHOLD
-            median_val = series.median()
-            new_features[f"{col}_above_median"] = (series > median_val).astype(float)
+            df["stat_mean"] = row_mean.astype(float)
+            df["stat_std"] = row_std.astype(float)
+            df["stat_min"] = row_min.astype(float)
+            df["stat_max"] = row_max.astype(float)
+            df["stat_range"] = (row_max - row_min).astype(float)
+            df["stat_skew_proxy"] = ((row_mean - row_min) / (row_std + EPS)).replace(
+                [np.inf, -np.inf], 0
+            ).fillna(0).astype(float)
 
-        except Exception:
-            continue
+        for col in numeric_cols:
+            rank = df[col].rank(pct=True)
+            df[f"{col}_rank_pct"] = rank.clip(0, 1).astype(float)
 
-    if new_features:
-        new_df = pd.DataFrame(new_features, index=df_result.index)
-        df_result = pd.concat([df_result, new_df], axis=1)
+        df = finalize_numeric(df)
+        df = df.loc[:, ~df.columns.duplicated()]
 
-    return df_result
+        return df
 
-
-# =========================================================
-# STAT FEATURES (FIXED)
-# =========================================================
-
-
-def generate_stat_features(df, cols):
-    df_result = df.copy()
-
-    X = df_result[cols].select_dtypes(include=["number"]).astype(float)
-    X = X.replace([np.inf, -np.inf], np.nan)
-
-    row_mean = X.mean(axis=1)
-    row_std = X.std(axis=1)
-    row_min = X.min(axis=1)
-    row_max = X.max(axis=1)
-
-    row_range = row_max - row_min
-
-    row_skew = (row_mean - row_min) / (row_std + EPS)
-
-    df_result["stat_mean"] = row_mean.astype(float)
-    df_result["stat_std"] = row_std.fillna(0).astype(float)
-    df_result["stat_min"] = row_min.astype(float)
-    df_result["stat_max"] = row_max.astype(float)
-    df_result["stat_range"] = row_range.astype(float)
-    df_result["stat_skew_proxy"] = (
-        row_skew.replace([np.inf, -np.inf], 0).fillna(0).astype(float)
-    )
-
-    return df_result
+    def get_feature_names_out(self, input_features=None):
+        return list(self._numeric_cols_) if self._numeric_cols_ else []
 
 
 # =========================================================
-# RANK FEATURES (NEW)
-# =========================================================
-
-
-def generate_rank_features(df, cols):
-    df_result = df.copy()
-
-    for col in cols:
-        if col not in df_result.columns:
-            continue
-
-        if not np.issubdtype(df_result[col].dtype, np.number):
-            continue
-
-        series = pd.to_numeric(df_result[col], errors="coerce")
-
-        rank = series.rank(pct=True)
-
-        df_result[f"{col}_rank_pct"] = rank.clip(0, 1).astype(float)
-
-    return df_result
-
-
-# =========================================================
-# MAIN PIPELINE
+# CONVENIENCE FUNCTION
 # =========================================================
 
 
 def apply_advanced_feature_engineering(X, verbose=True):
-    if verbose:
-        print("\n🔧 Feature engineering (SAFE MODE)")
-
-    X_result = X.copy()
-
-    X_result = force_scalar(X_result)
-
-    numeric_cols = X_result.select_dtypes(include=[np.number]).columns.tolist()
-    cat_cols = X_result.select_dtypes(include=["object", "category"]).columns.tolist()
-
-    if numeric_cols:
-        X_result[numeric_cols] = X_result[numeric_cols].fillna(X_result[numeric_cols].median())
-
-    for col in cat_cols:
-        X_result[col] = X_result[col].fillna("missing")
-
-    # pipeline
-    X_result = create_numeric_transforms(X_result, numeric_cols)
-    X_result = generate_stat_features(X_result, numeric_cols)
-    X_result = generate_rank_features(X_result, numeric_cols)
-
-    X_result = finalize_numeric(X_result)
-
-    assert_no_object(X_result, "FINAL")
-
-    if verbose:
-        print(f"   ✅ Итог: {X_result.shape[1]} признаков")
-
-    return X_result
+    """
+    Обратная совместимость: fit + transform на одних данных.
+    ВНИМАНИЕ: для честной оценки используй AdvancedFeatureTransformer в Pipeline.
+    """
+    logger.info("Feature engineering (convenience mode — проверь data leakage)")
+    transformer = AdvancedFeatureTransformer(verbose=verbose)
+    return transformer.fit_transform(X)
