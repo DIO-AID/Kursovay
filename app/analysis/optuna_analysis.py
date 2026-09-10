@@ -12,11 +12,22 @@ import matplotlib.pyplot as plt
 def render_optuna_analysis(db_path=None):
     st.subheader("⚙️ Optuna анализ")
 
+    uploaded_db = st.file_uploader("Загрузить Optuna DB (.db)", type=["db"], key="optuna_db_upload")
+
+    if uploaded_db is not None:
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+            tmp.write(uploaded_db.read())
+            db_path = tmp.name
+
     if db_path is None:
         base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         candidates = [
-            os.path.join(base, "Final", "results_fine", "optuna_fine.db"),
             os.path.join(base, "tuning", "optuna.db"),
+            os.path.join(base, "Final", "results_fine", "optuna_fine.db"),
+            os.path.join(base, "Final", "results_fine", "optuna_fair_xgboost.db"),
+            os.path.join(base, "Final", "results_fine", "optuna_fair_lightgbm.db"),
+            os.path.join(base, "Final", "results_fine", "optuna_fair_catboost.db"),
             os.path.join(base, "optuna.db"),
             os.path.join(os.getcwd(), "tuning", "optuna.db"),
         ]

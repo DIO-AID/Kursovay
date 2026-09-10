@@ -2,8 +2,11 @@ import sys
 from pathlib import Path
 import streamlit as st
 
-PROJECT_ROOT = Path(__file__).parent.resolve()
-sys.path.append(str(PROJECT_ROOT.parent))
+APP_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = APP_DIR.parent
+
+sys.path.insert(0, str(APP_DIR))
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from ui import render_ui
 
