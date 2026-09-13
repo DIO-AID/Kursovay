@@ -47,7 +47,12 @@ main (baseline) ──┬── exp1-huber-loss
 | `exp2-target-encoding` | SmoothedTargetEncoder (OOF) вместо OneHot для `ocean_proximity` | лучшее кодирование категорий | R2 > baseline + 0.03 |
 | `exp3-residual-stacking` | LGBM → XGB на остатках → сумма | модели дополняют друг друга | R2 > baseline + 0.02 |
 | `exp4-cross-features` | mul/div/sub топ-5 признаков + отбор | ❌ НЕ даст прироста (<0.01) | подтверждение отрицательной гипотезы |
-| `exp5-tabm-meta` | TabM prediction как доп. признак | нелинейные паттерны | R2 > baseline + 0.03 |
+| `exp5-nn-meta` | **MLPRegressor (sklearn)** prediction как доп. признак. ⚠️ Настоящий TabM/torch — ТОЛЬКО если MLP даст значимый прирост | нелинейные паттерны | R2 > baseline + 0.03 |
+
+> **Решение по TabM:** torch НЕ установлен; на Intel N95 это медленно и тяжело.
+> Сначала дешёвая проверка гипотезы через sklearn `MLPRegressor` (та же идея «НС → мета-признак»).
+> Если значимый прирост на обеих baseline-моделях — ставим torch и делаем настоящий TabM.
+> Если нет — фиксируем отрицательный результат, torch не ставим.
 
 ---
 
@@ -60,8 +65,8 @@ main (baseline) ──┬── exp1-huber-loss
    - единая функция метрик: `R2, MAE, RMSE`
    - `evaluate_ab(model, X, y, cv=5)` → 5-fold CV mean±std
    - сохранение результата в `Final/results_ab/<name>.json`
-2. Зафиксировать baseline-модель (LightGBM, лучшие параметры Optuna) и гиперпараметры — они больше НЕ меняются.
-3. Прогнать 3 сида → записать `baseline_metrics.json`.
+2. Зафиксировать **ДВЕ baseline-модели** — LightGBM и XGBoost (лучшие параметры Optuna). Их гиперпараметры замораживаются на весь A/B-цикл.
+3. Прогнать по 3 сида на каждую → записать `baseline_metrics.json` (по модели).
 4. Коммит: `exp: baseline A/B harness + метрики`.
 
 ### Шаг 1 — ветка `exp1-huber-loss`
@@ -94,13 +99,18 @@ main (baseline) ──┬── exp1-huber-loss
 - Прогнать, записать R2. **Ожидаем R2 ≈ baseline.** Записываем это как научный результат.
 - Коммит: `exp: Exp4 Cross-Features (отрицательный результат) ...` → НЕ мержим (или мержим как документированное подтверждение гипотезы).
 
-### Шаг 5 — ветка `exp5-tabm-meta` — ⚠️ БЛОКЕР
-- **Проблема:** torch НЕ установлен, а TabM — нейросеть. Установка torch на Intel N95 (CPU) — тяжело и медленно.
-- **Варианты (нужно решение):**
-  1. Установить torch CPU и обучить простой TabM (MLP-блок, ~несколько тыс. параметров).
-  2. Заменить TabM на sklearn-замену: `MLPRegressor` (torch не нужен) или `HistGradientBoostingRegressor` как мета-модель.
-  3. Убрать Exp5 из плана — оставить 4 эксперимента + честный вывод.
-- Мета-подход не меняется: фича `<meta_pred>` добавляется к 10 признакам, обучаем baseline-модель.
+### Шаг 5 — ветка `exp5-nn-meta`
+- Создать ветку от `main`.
+- **MVP (этап 1 — sklearn MLP):**
+  - Обучить `MLPRegressor(hidden_layer_sizes=(64,32), max_iter=300)` на `X_train`.
+  - Получить `pred_mlp_train/pred_mlp_test` → добавить как колонку `<nn_meta_pred>`.
+  - Обучить baseline LGBM/XGB на `X + nn_meta_pred`.
+  - Сравнить с baseline по R2 (5-fold CV + 3 сида).
+- **Если значимый прирост на обеих моделях → этап 2:**
+  - `pip install torch --index-url https://download.pytorch.org/whl/cpu`
+  - Реализовать TabM: mini-batch norm → MLP head → мета-фича.
+  - Сравнить с MLP surrogate.
+- **Если нет значимого прироста → фиксируем отрицательный результат**, torch не ставим.
 
 ### Шаг 6 — финальный комбинированный эксперимент (main)
 - Только подтверждённые методы объединяем в ONE pipeline.
