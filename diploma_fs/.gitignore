@@ -1,3 +1,7 @@
 __pycache__/
-data/
 *.pyc
+.venv/
+data/
+results/raw/
+results/optuna/
+requirements.lock.txt

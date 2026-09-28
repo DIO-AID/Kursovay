@@ -1,15 +1,32 @@
-"""Датасеты для экспериментов по отбору признаков с трансформациями.
+"""Шаг 1 конвейера: загрузка данных.
 
-Каждый загрузчик возвращает (X: DataFrame исходных признаков, y: ndarray, truth: dict|None).
-truth = {базовый_признак: истинная_трансформация} — известна только для синтетики.
+Каждый загрузчик возвращает Dataset:
+  X      — исходные факторы (DataFrame; числовые и категориальные столбцы)
+  y      — целевая переменная (ndarray)
+  truth  — {фактор: истинная трансформация}, известна только для синтетики
+  time   — True, если строки упорядочены по времени (тогда разбиение блоками, шаг 2)
+
+Правило шага: ничего не "учить" на данных (никаких средних, нормировок) —
+всё, что подстраивается под данные, делается на шаге 3 внутри train-фолда.
 """
-from pathlib import Path
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from .paths import DATA_DIRS
+
 TRUTH = {"x1": "log", "x2": "sq", "x3": "inv", "x4": "sqrt"}
+
+
+@dataclass
+class Dataset:
+    X: pd.DataFrame
+    y: np.ndarray
+    truth: dict | None = None
+    time: bool = False
+    meta: dict = field(default_factory=dict)
 
 
 def _target(X, rng, noise=0.3):
@@ -22,48 +39,58 @@ def synth_indep(n=1500, seed=0):
     Имена x1..x10 выбраны намеренно: startswith('x1') ловит и x10."""
     rng = np.random.default_rng(seed)
     X = pd.DataFrame({f"x{i}": rng.uniform(0.5, 5, n) for i in range(1, 11)})
-    return X, _target(X, rng), dict(TRUTH)
+    return Dataset(X, _target(X, rng), dict(TRUTH))
 
 
 def synth_corr(n=1500, seed=1, rho=0.8):
     """То же, но каждый информативный фактор коррелирует (rho) с шумовым двойником:
-    x1~x5, x2~x6, x3~x7, x4~x8. Проверка устойчивости к мультиколлинеарности факторов."""
+    x1~x5, x2~x6, x3~x7, x4~x8."""
     rng = np.random.default_rng(seed)
     Z = rng.normal(size=(n, 10))
     for a, b in [(0, 4), (1, 5), (2, 6), (3, 7)]:
         Z[:, b] = rho * Z[:, a] + np.sqrt(1 - rho ** 2) * Z[:, b]
-    U = norm.cdf(Z)
-    X = pd.DataFrame(0.5 + 4.5 * U, columns=[f"x{i}" for i in range(1, 11)])
-    return X, _target(X, rng), dict(TRUTH)
+    X = pd.DataFrame(0.5 + 4.5 * norm.cdf(Z), columns=[f"x{i}" for i in range(1, 11)])
+    return Dataset(X, _target(X, rng), dict(TRUTH))
 
 
 def diabetes():
     from sklearn.datasets import load_diabetes
     d = load_diabetes(as_frame=True)
-    return d.data.copy(), d.target.to_numpy(), None
+    return Dataset(d.data.copy(), d.target.to_numpy())
 
 
-def _find(rel):
-    """Ищет файл в ./data и ../data (код лежит в подпапке репозитория Kursovay)."""
-    for base in (Path("data"), Path("../data")):
+def find_data(rel):
+    """Ищет файл в diploma_fs/data и в корневой data/ репозитория."""
+    for base in DATA_DIRS:
         if (base / rel).exists():
             return base / rel
     return None
 
 
-def housing_csv(path=None):
-    """California Housing из репозитория Kursovay (запуск на своей машине)."""
-    df = pd.read_csv(path or _find("housing.csv")).dropna()
-    y = df.pop("median_house_value").to_numpy()
-    X = df.select_dtypes("number")
-    return X, y, None
+def csv_dataset(path, target, time_col=None, sample=None, seed=0, sep=None):
+    """Любой CSV: python scripts/run.py --csv файл.csv --target столбец [--time-col дата] [--sample N]
 
-
-def superconductivity_csv(path=None):
-    """UCI Superconductivity (81 признак, группы по физическим свойствам)."""
-    df = pd.read_csv(path or _find("superconductivity/train.csv"))
-    y = df.pop("critical_temp").to_numpy()
-    return df, y, None
+    - строки без значения цели удаляются;
+    - time_col: строки сортируются по времени, разбиение будет блоками (без перемешивания);
+    - sample: случайная выборка N строк (для скорости на слабом компьютере);
+    - числовые столбцы получат модификации, категориальные пойдут в модель как есть.
+    """
+    df = pd.read_csv(path, sep=sep, engine="python" if sep is None else "c")
+    if target not in df.columns:
+        raise ValueError(f"Нет столбца '{target}'. Есть: {list(df.columns)}")
+    df = df.dropna(subset=[target]).dropna(axis=1, how="all")
+    if sample and len(df) > sample:
+        df = df.sample(n=sample, random_state=seed)
+    is_time = time_col is not None
+    if is_time:
+        df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
+        df = df.sort_values(time_col).drop(columns=[time_col])
+    y = pd.to_numeric(df.pop(target), errors="coerce")
+    keep = y.notna().to_numpy()
+    X = df.loc[keep].reset_index(drop=True)
+    return Dataset(X, y[keep].to_numpy(dtype=float), None, is_time,
+                   {"source": str(path), "target": target, "time_col": time_col,
+                    "sample": sample})
 
 
 DATASETS = {
@@ -71,8 +98,5 @@ DATASETS = {
     "synth_corr": synth_corr,
     "diabetes": diabetes,
 }
-# Подключаются автоматически, если файл лежит на диске
-if _find("housing.csv"):
-    DATASETS["housing"] = housing_csv
-if _find("superconductivity/train.csv"):
-    DATASETS["superconductivity"] = superconductivity_csv
+if find_data("housing.csv"):
+    DATASETS["housing"] = lambda: csv_dataset(find_data("housing.csv"), "median_house_value")
