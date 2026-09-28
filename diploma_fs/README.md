@@ -17,13 +17,18 @@
 
 ```powershell
 # Windows (PowerShell)
-powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1          # ядро
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -Extra   # + catboost, shap, optuna, streamlit
 .venv\Scripts\Activate.ps1
 ```
 
+Ядро (`requirements.txt`) и тяжёлые пакеты веток (`requirements-extra.txt`) ставятся раздельно:
+если CatBoost или SHAP не собираются под вашу версию Python, ядро всё равно работает.
+Если установка раньше падала — удалите `requirements.lock.txt` и `.venv` и запустите заново.
+
 ```bash
 # Linux / macOS
-bash scripts/setup.sh
+bash scripts/setup.sh            # или: bash scripts/setup.sh --extra
 source .venv/bin/activate
 ```
 
@@ -39,17 +44,26 @@ python scripts/theory_check.py                             # проверка H0
 python scripts/report.py                                   # docs/REPORT.md, results/summary.csv, results/figures/*.svg
 ```
 
-Свой CSV:
+Реальные датасеты — через реестр `fsx/registry.py` (цель, время, утечки заданы там):
+
+```bash
+python scripts/download_data.py                 # скачать все из реестра в data/
+python scripts/download_data.py --check         # проверить скачанные файлы
+python scripts/run.py --list                    # что есть в реестре
+python scripts/run.py --method all --dataset steel tetouan --select-sample 3000
+```
+
+Свой CSV (разово, без реестра):
 
 ```bash
 python scripts/run.py --method all --csv data/concrete.csv --target strength
-python scripts/run.py --method all --csv data/steel.csv --target Usage_kWh --time-col date --sample 10000
+python scripts/run.py --method all --csv data/my_series.csv --target y --time-col date --sample 10000
 ```
 
 CSV кладите в `diploma_fs/data/` (или в `data/` в корне репозитория; `housing.csv` оттуда
 подключается как встроенный датасет автоматически).
-`--time-col` — строки сортируются по времени, разбиение блоками без перемешивания;
-`--sample N` — случайные N строк (для слабого компьютера); `--name` — имя в результатах.
+`--time-col` — строки сортируются по времени, обучение только на прошлом;
+`--sample N` — N строк (случайные; для временных — последние N подряд); дата в `--csv` должна быть в формате ISO (ГГГГ-ММ-ДД), другие форматы — через реестр (`time_format`); `--name` — имя в результатах.
 
 Полный прогон `--method all` на трёх встроенных датасетах занимает порядка 10–20 минут
 на слабом ноутбуке (дольше всех Boruta и RFE).
@@ -58,8 +72,8 @@ CSV кладите в `diploma_fs/data/` (или в `data/` в корне реп
 
 ```
 diploma_fs/
-  fsx/            код конвейера: data, transforms, evaluate, selectors/ (методы отбора)
-  scripts/        run.py, theory_check.py, report.py, check_env.py, setup.ps1/.sh
+  fsx/            код конвейера: data, registry (реестр датасетов), transforms, evaluate, selectors/
+  scripts/        run.py, download_data.py, theory_check.py, report.py, check_env.py, setup.ps1/.sh
   results/        raw/ (не в git), summary.csv, ranking.csv, theory_check.json, figures/*.svg
   docs/           отчёт и документы
   data/           CSV (не в git)
