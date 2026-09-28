@@ -1,20 +1,9 @@
-# Установка: см. scripts/setup.ps1 (Windows) или scripts/setup.sh (Linux/macOS).
-# После первой успешной установки setup-скрипт записывает точные версии
-# в requirements.lock.txt — дальше ставится именно он, у всех одинаково.
-
-# --- ядро: конвейер, отчёт (проверено: numpy 2.4.4, pandas 3.0.2, scipy 1.17.1,
-#     scikit-learn 1.8.0, matplotlib 3.10.8, seaborn 0.13.2)
+# ЯДРО — всё, что нужно для конвейера, theory_check и report (этап 1 и research/real-data).
+# Установка: scripts/setup.ps1 (Windows) или scripts/setup.sh (Linux/macOS).
+# Проверено: numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, matplotlib 3.10.8.
 numpy>=1.26
 pandas>=2.1
 scipy>=1.11
 scikit-learn>=1.4
 matplotlib>=3.8
-seaborn>=0.13
-
-# --- ветки этапа 2: CatBoost/SHAP, Optuna и дашборд, Streamlit, скачивание датасетов
-catboost>=1.2
-shap>=0.44
-optuna>=3.6
-optuna-dashboard>=0.15
-streamlit>=1.30
 ucimlrepo>=0.0.7
