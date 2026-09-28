@@ -34,7 +34,19 @@ source .venv/bin/activate
 
 Проверка: `python scripts/check_env.py`.
 
-## Запуск
+## Самый простой путь: дашборд
+
+```bash
+python -m pip install streamlit          # один раз (или setup.ps1 -Extra)
+streamlit run scripts/dashboard.py       # откроется браузер
+```
+
+Вкладки: **Данные** (скачать датасеты), **Запуск** (выбрать датасеты и методы, прогон идёт в
+фоне — страницу можно закрыть), **Результаты** (рейтинг, таблицы и графики на одной странице).
+Без дашборда: `python scripts/pipeline.py [--dataset all --select-sample 3000]`, затем открыть
+`results/report.html` двойным щелчком.
+
+## Запуск по шагам
 
 ```bash
 python scripts/run.py --list                               # методы и датасеты

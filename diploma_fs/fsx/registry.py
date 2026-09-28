@@ -41,7 +41,7 @@ DATASETS = {
                          time_col=None, drop=["aveOralF"], cat_cols=["Gender", "Age", "Ethnicity"],
                          sample=None, role="main", status="draft"),
     "lattice": dict(uci_id=1091, file="1091_lattice.csv", target="k-inf", time_col=None,
-                    drop=["PPPF"], cat_cols=[], sample=10000, role="main", status="draft"),
+                    drop=["PPPF"], cat_cols=[], sample=5000, role="main", status="draft"),
     "concrete": dict(uci_id=165, file="165_concrete.csv",
                      target="Concrete compressive strength", time_col=None, drop=[],
                      cat_cols=[], sample=None, role="classic", status="draft"),
