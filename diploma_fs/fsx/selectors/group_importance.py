@@ -28,6 +28,13 @@ def group_perm_importance(model, Fva, yva, groups, rng, n_repeats=5):
     return imp
 
 
+def _abs_corr(a, b):
+    """|корреляция Пирсона|; для постоянного столбца 0 (а не NaN, из-за которого падал argmax)."""
+    if np.std(a) == 0 or np.std(b) == 0:
+        return 0.0
+    return float(abs(np.corrcoef(a, b)[0, 1]))
+
+
 def group_importance(F, y, groups, seed, eps=0.005):
     Ftr, Fva, ytr, yva = train_test_split(F, y, test_size=0.2, random_state=seed)
     m = HistGradientBoostingRegressor(max_iter=200, learning_rate=0.05,
@@ -37,8 +44,8 @@ def group_importance(F, y, groups, seed, eps=0.005):
     for g, v in sorted(imp.items(), key=lambda kv: -kv[1]):
         if v > eps:
             cols = groups[g]
-            corr = [abs(np.corrcoef(F[c], y)[0, 1]) for c in cols]
-            feats.append(cols[int(np.nanargmax(corr))])
+            corr = np.array([_abs_corr(F[c].to_numpy(), y) for c in cols])
+            feats.append(cols[int(np.argmax(corr))])
     return feats, {"group_importance": imp}
 
 

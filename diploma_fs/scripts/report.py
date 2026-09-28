@@ -184,6 +184,7 @@ def summarize(data):
                 row["n_features"] = float(np.mean([r["n_features"] for r in recs]))
                 row["stability"] = jaccard([r["features"] for r in recs])
                 row["select_time"] = float(np.mean([r["select_time"] for r in recs]))
+                row["empty"] = int(sum(bool(r.get("empty_selection")) for r in recs))
                 row["delta"], row["p"] = float("nan"), float("nan")
                 if ref is not None and meth != REF:
                     common = sorted(set(keyed(run)) & set(keyed(ref)))
@@ -204,7 +205,7 @@ def summarize(data):
 
 
 COLS = ["dataset", "method", "model", "n_folds", "r2", "r2_std", "delta", "mae", "rmse",
-        "fit_time", "n_features", "stability", "select_time", "p", "p_holm", "verdict"]
+        "fit_time", "n_features", "stability", "select_time", "empty", "p", "p_holm", "verdict"]
 
 
 def write_csv(path, rows, cols):
@@ -558,7 +559,8 @@ def main():
                 dl = "" if meth == REF or not np.isfinite(r["delta"]) else f" ({r['delta']:+.4f}){r['verdict']}"
                 cells.append(f"{r['r2']:.4f}{dl}")
             r0 = idx[(d, meth, MODELS[0])]
-            md.append(f"| {label(meth)} | {r0['n_features']:.1f} | " + " | ".join(cells)
+            em = f" (пустой отбор {r0['empty']}/{r0['n_folds']})" if r0["empty"] else ""
+            md.append(f"| {label(meth)}{em} | {r0['n_features']:.1f} | " + " | ".join(cells)
                       + f" | {r0['stability']:.2f} | {r0['select_time']:.2f} |")
         md.append("")
         truth = any_run.get("truth")
