@@ -44,7 +44,7 @@ def shape_fit(F, y, groups, seed, eps=0.005):
             best = "raw"
         share = float(np.var(np.interp(F[f"{b}{SEP}raw"], grid, f)) / vy)
         info[b] = {"transform": best, "fit_r2": {k: round(v, 4) for k, v in fits.items()},
-                   "share": share, "grid": np.round(grid, 4).tolist(),
+                   "share": share, "shift": shift, "grid": np.round(grid, 4).tolist(),
                    "pd": np.round(f, 4).tolist()}
         if share > eps:
             feats.append(f"{b}{SEP}{best}")

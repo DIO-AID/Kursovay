@@ -1,21 +1,69 @@
-# fsx-diploma — отбор признаков с учётом модификаций
+# diploma_fs — выбор модификаций признаков
 
-Экспериментальный стенд к диплому. План: [EXPERIMENT_PLAN.md](EXPERIMENT_PLAN.md),
-результаты: [REPORT.md](REPORT.md), журнал решений: [DECISIONS_LOG.md](DECISIONS_LOG.md).
+Стенд к диплому: как автоматически выбрать модификацию каждого фактора
+(raw, log, sqrt, sq, inv) для интерпретируемой модели и чем это отличается от бустинга.
 
-Требования: python 3.10+, scikit-learn, scipy, pandas, matplotlib, seaborn.
+| Документ | Зачем |
+|---|---|
+| [docs/МЕТОДИЧКА.md](docs/МЕТОДИЧКА.md) | простым языком: выводы, методы, как читать отчёт, словарик |
+| [docs/REPORT.md](docs/REPORT.md) | таблицы и графики (создаётся `scripts/report.py`) |
+| [docs/PIPELINE.md](docs/PIPELINE.md) | конвейер из 7 шагов, правила честности, формат результатов |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | критерий принятия и решения по каждому методу |
+| [docs/PLAN.md](docs/PLAN.md) | этапы и ветки |
 
-## Быстрый старт
+## Установка (один раз)
 
-```bash
-cd diploma_fs
-pip install scikit-learn scipy pandas matplotlib seaborn
-python run.py --method base_raw base_fe_all sysoev_paper sysoev_fixed group_importance shape_fit boruta rfe
-python theory_check.py
-python report.py        # пересоздаёт REPORT.md и figures/*.png
+Из папки `diploma_fs`:
+
+```powershell
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+.venv\Scripts\Activate.ps1
 ```
 
-Данные ищутся в `diploma_fs/data/` и в корневой `data/` репозитория
-(`housing.csv`, `superconductivity/train.csv`) и подключаются автоматически.
-Сырые JSON-результаты и PNG-графики не коммитятся через коннектор — они
-воспроизводятся командами выше (фиксированные сиды).
+```bash
+# Linux / macOS
+bash scripts/setup.sh
+source .venv/bin/activate
+```
+
+Проверка: `python scripts/check_env.py`.
+
+## Запуск
+
+```bash
+python scripts/run.py --list                               # методы и датасеты
+python scripts/run.py --method all                         # все методы × встроенные датасеты
+python scripts/run.py --method base_fe_all shape_fit --datasets synth_indep
+python scripts/theory_check.py                             # проверка H0 -> results/theory_check.json
+python scripts/report.py                                   # docs/REPORT.md, results/summary.csv, results/figures/*.svg
+```
+
+Свой CSV:
+
+```bash
+python scripts/run.py --method all --csv data/concrete.csv --target strength
+python scripts/run.py --method all --csv data/steel.csv --target Usage_kWh --time-col date --sample 10000
+```
+
+CSV кладите в `diploma_fs/data/` (или в `data/` в корне репозитория; `housing.csv` оттуда
+подключается как встроенный датасет автоматически).
+`--time-col` — строки сортируются по времени, разбиение блоками без перемешивания;
+`--sample N` — случайные N строк (для слабого компьютера); `--name` — имя в результатах.
+
+Полный прогон `--method all` на трёх встроенных датасетах занимает порядка 10–20 минут
+на слабом ноутбуке (дольше всех Boruta и RFE).
+
+## Структура
+
+```
+diploma_fs/
+  fsx/            код конвейера: data, transforms, evaluate, selectors/ (методы отбора)
+  scripts/        run.py, theory_check.py, report.py, check_env.py, setup.ps1/.sh
+  results/        raw/ (не в git), summary.csv, ranking.csv, theory_check.json, figures/*.svg
+  docs/           отчёт и документы
+  data/           CSV (не в git)
+```
+
+Новый метод отбора = новый файл в `fsx/selectors/` с `METHODS = {"имя": функция}`;
+он появится в `run.py --list` автоматически.
