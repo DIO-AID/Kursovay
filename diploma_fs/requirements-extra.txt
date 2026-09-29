@@ -7,3 +7,4 @@ optuna>=3.6            # research/optuna
 optuna-dashboard>=0.15 # просмотр results/optuna/studies.db
 streamlit>=1.30        # research/app
 pytest>=8              # tests/ (python -m pytest tests -q)
+reportlab>=4.0         # scripts/make_report_sample.py (PDF-отчёт)
