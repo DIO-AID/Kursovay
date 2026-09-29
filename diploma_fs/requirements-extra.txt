@@ -6,3 +6,4 @@ shap>=0.44             # research/catboost-shap
 optuna>=3.6            # research/optuna
 optuna-dashboard>=0.15 # просмотр results/optuna/studies.db
 streamlit>=1.30        # research/app
+pytest>=8              # tests/ (python -m pytest tests -q)
