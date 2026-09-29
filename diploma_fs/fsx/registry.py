@@ -13,6 +13,12 @@
   sample    — сколько строк брать (None = все); для временных берётся непрерывный хвост ряда
   role      — main | classic | control (отрицательный контроль: ожидаем, что отбор не поможет)
   status    — draft (не проверен на скачанном файле) | verified
+  --- только для временного прогноза (fsx/lags.py, scripts/run_forecast.py) ---
+  horizon     — горизонт прогноза как интервал pandas ("1h", "1D"); признаки в момент t строятся
+                только из данных до t − horizon
+  known_ahead — колонки, известные заранее (расписание, календарь: день недели, NSM);
+                они НЕ сдвигаются. Все остальные факторы в режиме «прогноз» берутся с лагом
+  hour_col    — час в отдельной колонке (время = дата + час)
 Правило отбора (зафиксировано до прогона, docs/DECISIONS.md): регрессия, >= 1000 строк,
 5..40 числовых признаков, числовая цель задана явно, утечки удалены; spread — только описание.
 """
@@ -20,14 +26,17 @@
 DATASETS = {
     "tetouan": dict(uci_id=849, file="849_tetouan.csv", target="Zone 1 Power Consumption",
                     time_col="DateTime", drop=["Zone 2  Power Consumption", "Zone 3  Power Consumption"],
-                    cat_cols=[], sample=10000, role="main", status="draft"),
+                    cat_cols=[], sample=10000, role="main", status="draft",
+                    horizon="1h", known_ahead=[]),
     "steel": dict(uci_id=851, file="851_steel.csv", target="Usage_kWh", time_col="date",
                   time_format="%d/%m/%Y %H:%M", drop=["CO2(tCO2)"], cat_cols=["WeekStatus", "Day_of_week", "Load_Type"],
-                  sample=10000, role="main", status="draft"),
+                  sample=10000, role="main", status="draft",
+                  horizon="1h", known_ahead=["NSM", "WeekStatus", "Day_of_week"]),
     "seoul_bike": dict(uci_id=560, file="560_seoul_bike.csv", target="Rented Bike Count",
                        time_col="Date", time_format="%d/%m/%Y", drop=[],
                        cat_cols=["Hour", "Seasons", "Holiday", "Functioning Day"],
-                       sample=None, role="main", status="draft"),
+                       sample=None, role="main", status="draft", hour_col="Hour",
+                       horizon="1h", known_ahead=["Hour", "Seasons", "Holiday", "Functioning Day"]),
     "temp_forecast": dict(uci_id=514, file="514_temp_forecast.csv", target="Next_Tmax",
                           time_col="Date", time_format="%Y-%m-%d", drop=["Next_Tmin"], cat_cols=["station"],
                           sample=None, role="main", status="draft"),

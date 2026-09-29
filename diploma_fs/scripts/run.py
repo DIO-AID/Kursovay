@@ -52,7 +52,9 @@ if a.list or not a.method:
         print(f"  {k:14s} {r['role']:8s} {r['status']:9s} data/{r['file']}  цель: {r['target']}")
     sys.exit(0)
 
-methods = sorted(REGISTRY) if a.method == ["all"] else a.method
+# cb_* — методы ветки research/forecast (scripts/run_forecast.py); в "all" старого стенда не входят,
+# чтобы состав прежних прогонов не менялся. Явно (--method cb_shap) их запустить можно.
+methods = sorted(m for m in REGISTRY if not m.startswith("cb_")) if a.method == ["all"] else a.method
 unknown = [m for m in methods if m not in REGISTRY]
 if unknown:
     sys.exit(f"Неизвестные методы: {unknown}. Доступны: {sorted(REGISTRY)}")
