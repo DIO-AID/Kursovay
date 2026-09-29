@@ -1,4 +1,4 @@
-# Формат отчёта по экспериментам (согласован 29.09.2026)
+# Формат отчёта по экспериментам (согласован и подтверждён 29.09.2026)
 
 Отчёт должен читаться без знания кода. Образец (числа условные): `python scripts/make_report_sample.py` → `docs/REPORT_SAMPLE.pdf`.
 Реальный отчёт строит `scripts/report_forecast.py` в двух видах: `docs/FORECAST_REPORT.md` и PDF/HTML.
@@ -46,7 +46,8 @@
 
 ## Статус
 
-- [x] Формат согласован, образец строит `scripts/make_report_sample.py`.
+- [x] Формат согласован и подтверждён автором (29.09.2026), образец строит `scripts/make_report_sample.py`.
+- Все принятые решения по ветке — `docs/DECISIONS_FORECAST.md`.
 - [ ] Добавить в код модели `glm` и `xgboost`.
 - [ ] Поле `labels` в реестре для steel и tetouan; `describe()` для признаков.
 - [ ] Перевести `report_forecast.py` на этот формат (MD + PDF).
