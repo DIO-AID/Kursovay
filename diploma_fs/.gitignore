@@ -4,5 +4,8 @@ __pycache__/
 data/
 results/raw/
 results/optuna/
+results/forecast/
 results/*.log
 requirements.lock.txt
+*.pdf
+*.svg
