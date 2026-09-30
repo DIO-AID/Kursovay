@@ -32,7 +32,7 @@ DATASETS = {
                           time_col="Date", time_format="%Y-%m-%d", drop=["Next_Tmin"], cat_cols=["station"],
                           sample=None, role="main", status="draft"),
     "gas_turbine": dict(uci_id=551, file="551_gas_turbine.csv", target="NOX", time_col=None,
-                        drop=["CO", "Year"], cat_cols=[], sample=10000, role="main",
+                        drop=["CO", "year"], cat_cols=[], sample=10000, role="main",
                         status="draft"),
     "auction": dict(uci_id=713, file="713_auction.csv", target="verification.time",
                     time_col=None, drop=["verification.result"], cat_cols=[],
