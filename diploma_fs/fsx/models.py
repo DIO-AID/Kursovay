@@ -2,7 +2,12 @@
 
   naive_last — «как час назад»: последнее известное значение цели (лаг h);
   naive_day  — «как вчера в это же время» (сезонный наивный прогноз);
-  ridge      — линейная модель (пропуски -> медиана train, стандартизация, RidgeCV);
+  glm        — линейная регрессия без регуляризации (пропуски -> медиана train, стандартизация):
+               самый простой и самый объяснимый вариант, как в опубликованных работах по стали;
+  ridge      — тот же линейный класс, но с подбором силы регуляризации (RidgeCV) по train;
+  xgboost    — XGBRegressor, те же 500 деревьев и глубина 6, что у CatBoost. Если пакета xgboost
+               нет, модель в прогон не попадает вовсе (в отчёте это видно), потому что подменять
+               её на HistGradientBoosting значило бы сравнивать два одинаковых столбца;
   catboost   — CatBoostRegressor, 500 деревьев, CPU. Если пакет catboost не установлен,
                вместо него честно берётся HistGradientBoosting, и это пишется в результаты
                (поле backend), чтобы не выдавать одно за другое.
@@ -17,17 +22,27 @@ import time
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 CB_DEFAULT = dict(iterations=500, depth=6, learning_rate=0.05, l2_leaf_reg=3.0)
+# порядок моделей в отчёте фиксирован: линейные -> бустинги, основная (catboost) последней
+MODEL_ORDER = ("glm", "ridge", "xgboost", "catboost")
 
 
 def has_catboost():
     try:
         import catboost  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def has_xgboost():
+    try:
+        import xgboost  # noqa: F401
         return True
     except Exception:
         return False
@@ -41,9 +56,24 @@ def has_optuna():
         return False
 
 
+def make_glm():
+    """Линейная регрессия: те же пропуски и стандартизация, но без регуляризации."""
+    return make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LinearRegression())
+
+
 def make_ridge():
     return make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
                          RidgeCV(alphas=np.logspace(-3, 3, 13)))
+
+
+def make_xgboost(seed, threads=-1):
+    """(модель, backend). Настройки те же, что у CatBoost, чтобы сравнение было честным."""
+    p = dict(CB_DEFAULT)
+    from xgboost import XGBRegressor
+    return XGBRegressor(n_estimators=p["iterations"], max_depth=p["depth"],
+                        learning_rate=p["learning_rate"], reg_lambda=p["l2_leaf_reg"],
+                        random_state=seed, n_jobs=threads, tree_method="hist",
+                        verbosity=0), "xgboost"
 
 
 def make_catboost(seed, params=None, threads=-1):
@@ -58,10 +88,19 @@ def make_catboost(seed, params=None, threads=-1):
                                          random_state=seed), "hgb_fallback"
 
 
+def model_names():
+    """Имена моделей, которые реально попадут в прогон (без конструирования объектов)."""
+    return [m for m in MODEL_ORDER if m != "xgboost" or has_xgboost()]
+
+
 def make_models(seed, cb_params=None):
     """Модели, которые учатся на признаках (наивные считаются отдельно, им признаки не нужны)."""
+    out = {"glm": (make_glm(), "sklearn"), "ridge": (make_ridge(), "sklearn")}
+    if has_xgboost():
+        out["xgboost"] = make_xgboost(seed)
     cb, backend = make_catboost(seed, cb_params)
-    return {"ridge": (make_ridge(), "sklearn"), "catboost": (cb, backend)}
+    out["catboost"] = (cb, backend)
+    return out
 
 
 def naive_predictions(F, lag_last, lag_day):

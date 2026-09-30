@@ -29,7 +29,7 @@ import numpy as np
 
 from .evaluate import passport
 from .lags import FAMILIES, LagFE, check_no_leak
-from .models import fit_predict, make_models, metrics, naive_predictions, tune_catboost
+from .models import fit_predict, make_models, metrics, model_names, naive_predictions, tune_catboost
 from .paths import RESULTS
 from .selectors import REGISTRY
 
@@ -144,7 +144,7 @@ def run_forecast(name, ds, mode="forecast", horizon=None, selectors=DEFAULT_SELE
             empty = not feats
             if empty:          # честная заглушка: прогноз средним train (метод ничего не выбрал)
                 const = np.full(len(te), float(np.mean(ytr)))
-                m = {k: {**metrics(yte, const), "backend": "empty_stub"} for k in ("ridge", "catboost")}
+                m = {k: {**metrics(yte, const), "backend": "empty_stub"} for k in model_names()}
             else:
                 m = _fit_models(F, feats, tr, te, ytr, yte, cb_params)
             records[f"sel_{s}"].append({**base, "features": feats, "n_features": len(feats),

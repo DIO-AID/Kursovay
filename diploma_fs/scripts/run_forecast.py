@@ -29,10 +29,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fsx.data import TIME_DATASETS, DataError, registry_dataset  # noqa: E402
 from fsx.forecast import DEFAULT_SELECTORS, N_BLOCKS, run_forecast  # noqa: E402
-from fsx.models import has_catboost, has_optuna      # noqa: E402
+from fsx.models import MODEL_ORDER, has_catboost, has_optuna, has_xgboost, model_names  # noqa: E402
 from fsx.registry import DATASETS as REG             # noqa: E402
 
 TIME_REG = [k for k, r in REG.items() if r.get("horizon")]
+SHOW = ("naive_last", "naive_day") + MODEL_ORDER
 
 p = argparse.ArgumentParser(description="Прогноз энергопотребления: E1–E4")
 p.add_argument("--list", action="store_true")
@@ -48,10 +49,12 @@ p.add_argument("--quick", action="store_true")
 a = p.parse_args()
 
 print(f"CatBoost: {'есть' if has_catboost() else 'НЕТ -> вместо него HistGradientBoosting (hgb_fallback)'};"
+      f"XGBoost: {'есть' if has_xgboost() else 'НЕТ -> в прогон не входит'};"
       f" Optuna: {'есть' if has_optuna() else 'нет'}", flush=True)
 if a.list or not a.dataset:
     print("Временные датасеты:", ", ".join(list(TIME_DATASETS) + TIME_REG))
     print("Методы отбора по умолчанию:", ", ".join(DEFAULT_SELECTORS))
+    print("Модели в прогоне:", ", ".join(model_names()))
     sys.exit(0)
 
 selectors = a.select or (("cb_importance", "cb_shap", "sysoev_fixed") if a.quick else DEFAULT_SELECTORS)
@@ -73,7 +76,6 @@ for d in a.dataset:
                               a.tune, blocks, prog)
     print(f"\n{d}: шаг {info['step']}, горизонт {info['horizon_steps']} шаг., "
           f"разогрев {info['warmup_steps']} строк, {time.time() - t0:.0f} с")
-    print(f"  {'метод':26s} " + "  ".join(f"MAE {m:10s}" for m in ("naive_last", "naive_day", "ridge", "catboost")))
+    print(f"  {'метод':26s} " + "  ".join(f"MAE {m:10s}" for m in SHOW))
     for m, v in summ.items():
-        print(f"  {m:26s} " + "  ".join(f"{v[k]:14.3f}" if k in v else " " * 14
-                                        for k in ("naive_last", "naive_day", "ridge", "catboost")))
+        print(f"  {m:26s} " + "  ".join(f"{v[k]:14.3f}" if k in v else " " * 14 for k in SHOW))
