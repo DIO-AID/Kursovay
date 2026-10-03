@@ -1,7 +1,9 @@
 # ДОПОЛНИТЕЛЬНО — только для отдельных веток; ставится отдельно, чтобы сбой одной тяжёлой
 # библиотеки (нет сборки под вашу версию Python) не ломал установку ядра:
 #   python -m pip install -r requirements-extra.txt
-catboost>=1.2          # research/catboost-shap, research/optuna
+catboost>=1.2          # research/catboost-shap, research/optuna, research/hpo-*
+xgboost>=2.0           # research/hpo-*
+lightgbm>=4.0          # research/hpo-*
 shap>=0.44             # research/catboost-shap
 optuna>=3.6            # research/optuna
 optuna-dashboard>=0.15 # просмотр results/optuna/studies.db

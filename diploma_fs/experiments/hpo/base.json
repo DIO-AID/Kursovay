@@ -1,0 +1,12 @@
+{
+  "name": "base",
+  "about": "Базовая настройка Optuna — как в tuning/run_optuna_model.py: случайные 20% для проверки, та же выборка для ранней остановки, 50 попыток, TPE.",
+  "datasets": ["tetouan", "steel", "appliances"],
+  "models": ["hgb", "lightgbm", "xgboost", "catboost"],
+  "n_trials": 50,
+  "budgets": [50],
+  "val_scheme": "random",
+  "es_modes": ["shared"],
+  "folds": 5,
+  "seed": 42
+}
