@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fsx.data import synth_factory                     # noqa: E402
 from fsx.forecast import feature_sets, forward_splits  # noqa: E402
-from fsx.lags import LagFE, LeakError, check_no_leak   # noqa: E402
+from fsx.lags import LagFE, LeakError, check_no_leak, describe   # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -82,3 +82,47 @@ def test_feature_sets(ds):
     assert "plan__now" in s["fs_no_lags"]
     for fam in ("calendar", "short", "daily", "rolling", "exog"):
         assert len(s[f"abl_no_{fam}"]) < len(cols)
+
+
+# ---------- describe(): расшифровка признаков для отчёта (docs/REPORT_FORMAT.md) ----------
+
+CTX = {"step": pd.Timedelta("15min"), "target": "Usage_kWh",
+       "labels": {"Usage_kWh": ("Потребление", "кВт·ч", "цель"),
+                  "NSM": ("Секунд от полуночи", "с", "известно заранее"),
+                  "Load_Type": ("Тип нагрузки", "", "только прошлое")},
+       "values": {"Load_Type": {"Light_Load": "лёгкая нагрузка"}}}
+
+
+def test_describe_пример_из_формата():
+    # ровно тот пример, что записан в docs/REPORT_FORMAT.md
+    assert describe("target.daily__lag96", CTX) == "потребление сутки назад"
+
+
+def test_describe_лаги_и_окна():
+    assert describe("target.short__lag4", CTX) == "потребление 1 ч назад"
+    assert describe("target.rolling__mean4", CTX) == "среднее «потребление» за 1 ч"
+    assert describe("target.rolling__std96", CTX) == "разброс «потребление» за сутки"
+    assert describe("target.daily__lag672", CTX) == "потребление неделю назад"
+
+
+def test_describe_календарь_и_известное_заранее():
+    assert describe("cal.hour__sin") == "синус часа суток"
+    assert describe("NSM__now", CTX) == "секунд от полуночи (известно заранее)"
+
+
+def test_describe_категории_расшифрованы():
+    assert describe("Load_Type__lag4cat_Light_Load", CTX) == "тип нагрузки (1 ч назад): лёгкая нагрузка"
+
+
+def test_describe_без_контекста_не_падает():
+    for c in ("cal.hour__raw", "target.daily__lag96", "Temperature__lag6", "Whatever__now"):
+        assert describe(c)                       # без ctx формулировка грубее, но текст есть
+
+
+def test_describe_переводит_все_признаки(ds):
+    """Ни один признак не должен остаться именем из кода — иначе отчёт не читается."""
+    fe = LagFE("1h", known_ahead=["plan"], cat_cols=["shift"]).fit(ds.X, ds.y, ds.t)
+    cols = fe.transform(ds.X, ds.y, ds.t).columns
+    ctx = dict(CTX, step=fe.step_)
+    left = [c for c in cols if describe(c, ctx) == c]
+    assert not left, f"не расшифрованы: {left[:5]}"

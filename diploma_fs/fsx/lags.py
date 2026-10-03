@@ -35,6 +35,112 @@ from .transforms import SEP
 FAMILIES = ("calendar", "short", "daily", "rolling", "exog")
 TARGET = "target"
 
+# ---------- расшифровка имён признаков для отчёта (docs/REPORT_FORMAT.md) ----------
+# Отчёт должен читаться без знания кода, поэтому каждый признак переводится на русский:
+#   describe("target.daily__lag96", ctx) -> "потребление сутки назад"
+
+_CAL = {
+    "cal.hour__raw": "час суток",
+    "cal.hour__sin": "синус часа суток",
+    "cal.hour__cos": "косинус часа суток",
+    "cal.dow__raw": "день недели (0 — понедельник)",
+    "cal.dow__sin": "синус дня недели",
+    "cal.dow__cos": "косинус дня недели",
+    "cal.weekend__raw": "выходной (1) или рабочий (0)",
+    "cal.month__raw": "месяц",
+}
+
+
+def _span_phrase(steps, ctx):
+    """Число шагов -> человеческое «1 ч», «сутки», «15 мин»."""
+    step = (ctx or {}).get("step")
+    if not step:
+        return f"{steps} шаг(ов)"
+    d = steps * step
+    day = pd.Timedelta("1D")
+    if d >= day and d % day == pd.Timedelta(0):
+        n = int(d / day)
+        return {1: "сутки", 2: "двое суток", 3: "трое суток", 7: "неделю"}.get(n, f"{n} суток")
+    hour = pd.Timedelta("1h")
+    if d % hour == pd.Timedelta(0):
+        return f"{int(d / hour)} ч"
+    return f"{int(d / pd.Timedelta('1m'))} мин"
+
+
+def _lower(s):
+    return s[:1].lower() + s[1:] if s else s
+
+
+def _tail_int(s):
+    """Число в конце строки: "lag4"->4, "mean4"->4, "std96"->96, "now"->None."""
+    digits = ""
+    for ch in reversed(s):
+        if not ch.isdigit():
+            break
+        digits = ch + digits
+    return int(digits) if digits else None
+
+
+def _meaning(col, ctx):
+    """Смысл столбца по-русски из labels реестра; None — расшифровки нет."""
+    return ((ctx or {}).get("labels") or {}).get(col, (None,))[0]
+
+
+def _value_ru(col, val, ctx):
+    return ((ctx or {}).get("values") or {}).get(col, {}).get(val, val)
+
+
+def describe(col, ctx=None):
+    """Признак по-русски. ctx — что знаем о ряде, иначе формулировки грубее.
+
+    ctx: {"step": pd.Timedelta,           # чтобы «96 шагов» стало «сутки»
+          "target": "Usage_kWh",          # имя цели -> «потребление»
+          "labels": {колонка: (смысл, единицы, роль)},   # из fsx/registry.py
+          "values": {колонка: {значение: по-русски}}}
+    """
+    if col in _CAL:
+        return _CAL[col]
+    group, _, kind = col.partition(SEP)
+    if not kind:
+        return col
+
+    target_raw = _meaning((ctx or {}).get("target"), ctx)
+    target_word = _lower(target_raw) if target_raw else "потребление"
+
+    # --- признаки самой цели ---
+    if group in (f"{TARGET}.short", f"{TARGET}.daily"):
+        return f"{target_word} {_span_phrase(_tail_int(kind), ctx)} назад"
+    if group == f"{TARGET}.rolling":
+        span = _span_phrase(_tail_int(kind), ctx)
+        if kind.startswith("mean"):
+            return f"среднее «{target_word}» за {span}"
+        if kind.startswith("std"):
+            return f"разброс «{target_word}» за {span}"
+        return f"{target_word} за {span}"
+
+    # --- факторы ---
+    raw = _meaning(group, ctx)
+    name = _lower(raw) if raw else group          # тех. имя без расшифровки не трогаем
+    if kind == "now":
+        return f"{name} (известно заранее)"
+    if kind == "cur":
+        return f"{name} в текущий момент"
+    if kind.startswith("lag") and _tail_int(kind) is not None:
+        return f"{name} {_span_phrase(_tail_int(kind), ctx)} назад"
+    if kind.startswith("mean") and _tail_int(kind) is not None:
+        return f"среднее «{name}» за {_span_phrase(_tail_int(kind), ctx)}"
+    # --- категории: cat_ (заранее), curcat_ (сейчас), lagNcat_ (с лагом) ---
+    if kind.startswith("curcat_"):
+        return f"{name} в текущий момент: {_value_ru(group, kind[7:], ctx)}"
+    if kind.startswith("cat_"):
+        return f"{name}: {_value_ru(group, kind[4:], ctx)}"
+    if "cat_" in kind:
+        head, _, val = kind.partition("cat_")
+        lag = _tail_int(head)
+        when = f"{_span_phrase(lag, ctx)} назад" if lag is not None else "с лагом"
+        return f"{name} ({when}): {_value_ru(group, val, ctx)}"
+    return col
+
 
 class LeakError(ValueError):
     """Нарушено условие «признак в t зависит только от данных до t − h»."""
