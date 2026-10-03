@@ -8,6 +8,7 @@
   time_col  — столбец времени или None; если задан, разбиение по времени (только прошлое -> будущее)
   time_format — формат даты для pd.to_datetime (ОБЯЗАТЕЛЬНО для dd/mm: иначе 01/02 читается
               как 2 января и порядок ряда ломается молча); None — ISO/авто
+              можно список форматов — берётся первый, которым читаются все даты
   drop      — колонки-утечки и идентификаторы (удаляются до всего остального)
   cat_cols  — категориальные, даже если записаны числами (час, сезон, станция)
   sample    — сколько строк брать (None = все); для временных берётся непрерывный хвост ряда
@@ -25,13 +26,18 @@
 
 DATASETS = {
     "tetouan": dict(uci_id=849, file="849_tetouan.csv", target="Zone 1 Power Consumption",
-                    time_col="DateTime", drop=["Zone 2  Power Consumption", "Zone 3  Power Consumption"],
+                    time_col="DateTime", time_format="%m/%d/%Y %H:%M",
+                    drop=["Zone 2  Power Consumption", "Zone 3  Power Consumption"],
                     cat_cols=[], sample=10000, role="main", status="draft",
                     horizon="1h", known_ahead=[]),
     "steel": dict(uci_id=851, file="851_steel.csv", target="Usage_kWh", time_col="date",
                   time_format="%d/%m/%Y %H:%M", drop=["CO2(tCO2)"], cat_cols=["WeekStatus", "Day_of_week", "Load_Type"],
                   sample=10000, role="main", status="draft",
                   horizon="1h", known_ahead=["NSM", "WeekStatus", "Day_of_week"]),
+    "appliances": dict(uci_id=374, file="374_appliances.csv", target="Appliances", time_col="date",
+                       time_format=["%Y-%m-%d %H:%M:%S", "%Y-%m-%d%H:%M:%S"],   # в выгрузке UCI пробел бывает потерян
+                       drop=[], cat_cols=[], sample=10000, role="main",
+                       status="draft", horizon="1h", known_ahead=[]),   # rv1, rv2 — случайный шум (проверка отбора)
     "seoul_bike": dict(uci_id=560, file="560_seoul_bike.csv", target="Rented Bike Count",
                        time_col="Date", time_format="%d/%m/%Y", drop=[],
                        cat_cols=["Hour", "Seasons", "Holiday", "Functioning Day"],

@@ -140,7 +140,7 @@ def csv_dataset(path, target, time_col=None, sample=None, seed=0, sep=None,
     - drop: колонки-утечки и идентификаторы; cat_cols: категориальные, даже если числа;
     - hour_col: если дата без времени, а час в отдельной колонке (Seoul Bike) — время = дата + час.
     """
-    df = pd.read_csv(path, sep=sep, engine="python" if sep is None else "c")
+    df = pd.read_csv(path, sep=sep, engine="python" if sep is None else "c", encoding="utf-8-sig")  # utf-8-sig: убирает BOM (Steel)
     df.columns = [str(c).strip() for c in df.columns]
     target, time_col = target.strip(), time_col.strip() if time_col else None
     need = [target] + ([time_col] if time_col else []) + list(drop) + list(cat_cols)
@@ -153,7 +153,11 @@ def csv_dataset(path, target, time_col=None, sample=None, seed=0, sep=None,
     n_empty = n0 - len(df)
     y = _strict_numeric(df[target], target, "Цель")
     if time_col:
-        t = pd.to_datetime(df[time_col], errors="coerce", format=time_format)
+        formats = [time_format] if time_format is None or isinstance(time_format, str) else list(time_format)
+        for fmt in formats:            # список форматов: берётся первый, которым читаются ВСЕ даты
+            t = pd.to_datetime(df[time_col], errors="coerce", format=fmt)
+            if not t.isna().any():
+                break
         if t.isna().any():
             ex = list(df.loc[t.isna(), time_col].astype(str).head(5))
             raise DataError(f"Время '{time_col}': {int(t.isna().sum())} значений не распознаны, "
