@@ -22,6 +22,10 @@
 
 Модели: naive_last, ridge (без настройки), hgb (sklearn, всегда доступен), lightgbm, xgboost, catboost.
 Для каждой: «стандартная» (параметры библиотеки по умолчанию, обучение на всём train) и настроенная Optuna.
+Настроенная считается двумя способами:
+  test_mae       — модель лучшей попытки как есть (обучена на части fit; так делает базовый проект);
+  refit_test_mae — те же настройки и найденное число деревьев, но обучение на всём train, как у стандартной
+                   (контроль: без него настроенная проигрывает уже потому, что видела меньше данных).
 Если пакета нет — модель пропускается с сообщением. Если нет optuna — случайный поиск с пометкой
 sampler="random_fallback" (такие результаты годятся только для проверки кода).
 """
@@ -168,7 +172,10 @@ class _CatBoost:
     @staticmethod
     def fit(params, X, y, es, seed, threads):
         from catboost import CatBoostRegressor
-        m = CatBoostRegressor(**params, loss_function="RMSE", random_seed=seed, verbose=0,
+        p = dict(params)
+        if "bagging_temperature" in p:
+            p.setdefault("bootstrap_type", "Bayesian")   # bagging_temperature действует только с Bayesian
+        m = CatBoostRegressor(**p, loss_function="RMSE", random_seed=seed, verbose=0,
                               thread_count=threads, allow_writing_files=False)
         if es is None:
             m.fit(X, y)
@@ -340,6 +347,17 @@ def run_experiment(cfg, progress=None, threads=-1, out_dir=None):
                     t2 = time.perf_counter()
                     trials, sampler = run_study(M.space, objective, cfg["n_trials"], cfg["seed"], prog)
                     budgets = [summarize_budget(trials, k) for k in cfg["budgets"] if k <= len(trials)]
+                    refit = {}                              # лучшая попытка -> ошибка после обучения на всём train
+                    for b in budgets:
+                        if b["best_trial"] not in refit:
+                            p = dict(b["params"])
+                            if i_es is not None:            # число деревьев — то, что нашла ранняя остановка
+                                p[M.n_key] = max(1, int(b["n_iter"]))
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                pr, _ = M.fit(p, Xtr, ytr, None, cfg["seed"], threads)
+                            refit[b["best_trial"]] = _mae(yte, pr(Xte))
+                        b["refit_test_mae"] = refit[b["best_trial"]]
                     payload = {"experiment": name, "dataset": dname, "model": mname, "es_mode": es_mode,
                                "val_scheme": cfg["val_scheme"], "fold": int(fold), "sampler": sampler,
                                "n_train": int(len(tr)), "n_test": int(len(te)), "gap": int(gap),
@@ -355,5 +373,6 @@ def run_experiment(cfg, progress=None, threads=-1, out_dir=None):
                     last = budgets[-1]
                     brief.append({"dataset": dname, "model": mname, "es_mode": es_mode, "fold": int(fold),
                                   "default": default["test_mae"], "tuned": last["test_mae"],
+                                  "refit": last["refit_test_mae"],
                                   "val": last["val_mae"], "sampler": sampler})
     return brief, missing

@@ -59,4 +59,5 @@ def test_end_to_end_small(tmp_path):
     import json
     r = json.loads(files[0].read_text(encoding="utf-8"))
     assert len(r["trials"]) == 4 and [b["budget"] for b in r["budgets"]] == [2, 4]
+    assert all(b["refit_test_mae"] > 0 for b in r["budgets"])       # настройки, обученные на всём train
     assert r["n_fit"] + r["n_val"] + (r["n_es"] if r["es_mode"] == "separate" else 0) <= r["n_train"]
