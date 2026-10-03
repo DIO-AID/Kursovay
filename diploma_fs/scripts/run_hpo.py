@@ -85,8 +85,9 @@ def prog(what, i, n):
 
 brief, missing = run_experiment(cfg, prog, a.threads)
 print(f"\nГотово за {time.time() - t0:.0f} с. Пропущены (нет пакета): {missing or '—'}")
-print(f"{'датасет':12s} {'модель':9s} {'остановка':9s} фолд  стандартная  настроенная  изменение   на проверке")
+print(f"{'датасет':12s} {'модель':9s} {'остановка':9s} фолд  стандартная  настроенная  изменение   на проверке  на всём обучении")
 for r in brief:
     print(f"{r['dataset']:12s} {r['model']:9s} {r['es_mode']:9s} {r['fold']:4d}  {r['default']:11.3f}  "
-          f"{r['tuned']:11.3f}  {100 * (r['tuned'] / r['default'] - 1):+8.1f}%  {r['val']:11.3f}")
+          f"{r['tuned']:11.3f}  {100 * (r['tuned'] / r['default'] - 1):+8.1f}%  {r['val']:11.3f}  "
+          f"{100 * (r['refit'] / r['default'] - 1):+15.1f}%")
 print(f"Отчёт: python scripts/report_hpo.py --experiment {cfg['name']}")
