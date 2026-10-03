@@ -1,0 +1,343 @@
+{
+ "dataset": "steel",
+ "mode": "forecast",
+ "horizon": "1h",
+ "n_rows": 9324,
+ "n_all_features": 40,
+ "lagfe": {
+  "step": "0 days 00:15:00",
+  "irregular_share": 0.0,
+  "horizon_steps": 4,
+  "steps_per_day": 96,
+  "daily_lags": [
+   96,
+   192,
+   672
+  ],
+  "windows": [
+   4,
+   96
+  ],
+  "warmup_steps": 676,
+  "mode": "forecast",
+  "known_ahead": [
+   "NSM",
+   "WeekStatus",
+   "Day_of_week"
+  ]
+ },
+ "leak_check_points": 10,
+ "gap": 93,
+ "select_sample": 5000,
+ "catboost_params": null,
+ "tuning": {
+  "tuned": false,
+  "reason": "не запрошено"
+ },
+ "passport": {
+  "created": "2026-10-03T22:59:00",
+  "git_commit": "ae8824a",
+  "git_dirty": true,
+  "python": "3.12.10",
+  "packages": {
+   "sklearn": "1.9.1",
+   "numpy": "2.5.3",
+   "pandas": "3.0.6",
+   "scipy": "1.18.1"
+  },
+  "split": "forward_time9_gap93",
+  "dataset_meta": {
+   "source": "C:\\Kursovay\\diploma_fs\\data\\851_steel.csv",
+   "name": "steel",
+   "target": "Usage_kWh",
+   "time_col": "date",
+   "sample": 10000,
+   "time_format": "%d/%m/%Y %H:%M",
+   "drop": [
+    "CO2(tCO2)"
+   ],
+   "cat_cols": [
+    "WeekStatus",
+    "Day_of_week",
+    "Load_Type"
+   ],
+   "rows_file": 35040,
+   "dropped_empty_target": 0,
+   "n_unique_target": 2013,
+   "role": "main",
+   "status": "draft",
+   "uci_id": 851,
+   "horizon": "1h",
+   "known_ahead": [
+    "NSM",
+    "WeekStatus",
+    "Day_of_week"
+   ]
+  }
+ },
+ "method": "naive",
+ "stability": null,
+ "records": [
+  {
+   "fold": 1,
+   "n_train": 840,
+   "n_test": 933,
+   "test_from": "2018-10-05 14:15:00",
+   "test_to": "2018-10-15 07:15:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.364617302898985,
+     "mae": 13.505037513397642,
+     "rmse": 27.35068598397876,
+     "mape": 0.996332443073713,
+     "wape": 0.5164594235338626,
+     "n_eval": 933,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.07377299492155065,
+     "mae": 18.635787781350484,
+     "rmse": 33.02244693874273,
+     "mape": 2.246194627034613,
+     "wape": 0.7126694912996415,
+     "n_eval": 933,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 2,
+   "n_train": 1773,
+   "n_test": 933,
+   "test_from": "2018-10-15 07:30:00",
+   "test_to": "2018-10-25 00:30:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.20602265975837275,
+     "mae": 17.745819935691316,
+     "rmse": 30.632287026392753,
+     "mape": 1.1296660392836424,
+     "wape": 0.5570336352855088,
+     "n_eval": 933,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": -0.08982705559503423,
+     "mae": 21.191854233654876,
+     "rmse": 35.88840533832285,
+     "mape": 1.6847700847759748,
+     "wape": 0.6652031658718344,
+     "n_eval": 933,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 3,
+   "n_train": 2706,
+   "n_test": 933,
+   "test_from": "2018-10-25 00:45:00",
+   "test_to": "2018-11-03 17:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.23498653348301324,
+     "mae": 15.37759914255091,
+     "rmse": 29.02351178685285,
+     "mape": 1.153158113365308,
+     "wape": 0.5372659363967124,
+     "n_eval": 933,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.20388641209238745,
+     "mae": 16.139978563772775,
+     "rmse": 29.607581826412588,
+     "mape": 1.2192420306143994,
+     "wape": 0.5639021160652898,
+     "n_eval": 933,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 4,
+   "n_train": 3639,
+   "n_test": 932,
+   "test_from": "2018-11-03 18:00:00",
+   "test_to": "2018-11-13 10:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.35236328327818756,
+     "mae": 12.81793991416309,
+     "rmse": 24.751270284304507,
+     "mape": 0.9726658360921991,
+     "wape": 0.48518215571712514,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.25120400434519474,
+     "mae": 13.983530042918456,
+     "rmse": 26.614206246695222,
+     "mape": 1.2993277584401939,
+     "wape": 0.52930184539731,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 5,
+   "n_train": 4571,
+   "n_test": 932,
+   "test_from": "2018-11-13 11:00:00",
+   "test_to": "2018-11-23 03:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.26989664419160486,
+     "mae": 17.91771459227468,
+     "rmse": 32.541348106493416,
+     "mape": 1.1990240239136787,
+     "wape": 0.5197507209893973,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.34847529783796016,
+     "mae": 18.554538626609443,
+     "rmse": 30.740350258461202,
+     "mape": 0.9525695235784639,
+     "wape": 0.538223487104981,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 6,
+   "n_train": 5503,
+   "n_test": 932,
+   "test_from": "2018-11-23 04:00:00",
+   "test_to": "2018-12-02 20:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.4350474771723698,
+     "mae": 11.069442060085839,
+     "rmse": 23.433289840455206,
+     "mape": 0.6528038108948326,
+     "wape": 0.4507582311377225,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.10788208789080833,
+     "mae": 17.28274678111588,
+     "rmse": 29.446821090188948,
+     "mape": 1.820221574994828,
+     "wape": 0.7037699213718591,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 7,
+   "n_train": 6435,
+   "n_test": 932,
+   "test_from": "2018-12-02 21:00:00",
+   "test_to": "2018-12-12 13:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.41251489064524505,
+     "mae": 10.761158798283263,
+     "rmse": 20.185405895319477,
+     "mape": 0.666594990438778,
+     "wape": 0.4447722168808915,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.3334504591723644,
+     "mae": 11.794710300429184,
+     "rmse": 21.50083230497989,
+     "mape": 0.8611866051325107,
+     "wape": 0.48749019934792404,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 8,
+   "n_train": 7367,
+   "n_test": 932,
+   "test_from": "2018-12-12 14:00:00",
+   "test_to": "2018-12-22 06:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.4056386404418476,
+     "mae": 12.94903433476395,
+     "rmse": 25.999104804661577,
+     "mape": 0.7323381875255623,
+     "wape": 0.476632620257074,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": 0.33922017437915464,
+     "mae": 13.076062231759655,
+     "rmse": 27.413311338094733,
+     "mape": 1.34665019303267,
+     "wape": 0.48130830786632406,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  },
+  {
+   "fold": 9,
+   "n_train": 8299,
+   "n_test": 932,
+   "test_from": "2018-12-22 07:00:00",
+   "test_to": "2018-12-31 23:45:00",
+   "features": [],
+   "n_features": 0,
+   "metrics": {
+    "naive_last": {
+     "r2": 0.49917670523237445,
+     "mae": 4.593937768240343,
+     "rmse": 12.41382533044363,
+     "mape": 0.3729494228792521,
+     "wape": 0.41036800901716014,
+     "n_eval": 932,
+     "fit_time": 0.0
+    },
+    "naive_day": {
+     "r2": -0.6238517111963866,
+     "mae": 11.108304721030043,
+     "rmse": 22.353037848868805,
+     "mape": 1.7350417446914714,
+     "wape": 0.9922844239292122,
+     "n_eval": 932,
+     "fit_time": 0.0
+    }
+   }
+  }
+ ]
+}

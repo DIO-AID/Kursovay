@@ -1,0 +1,747 @@
+{
+ "dataset": "tetouan",
+ "mode": "forecast",
+ "horizon": "1h",
+ "n_rows": 8986,
+ "n_all_features": 29,
+ "lagfe": {
+  "step": "0 days 00:10:00",
+  "irregular_share": 0.0,
+  "horizon_steps": 6,
+  "steps_per_day": 144,
+  "daily_lags": [
+   144,
+   288,
+   1008
+  ],
+  "windows": [
+   6,
+   144
+  ],
+  "warmup_steps": 1014,
+  "mode": "forecast",
+  "known_ahead": []
+ },
+ "leak_check_points": 10,
+ "gap": 89,
+ "select_sample": 5000,
+ "catboost_params": null,
+ "tuning": {
+  "tuned": false,
+  "reason": "не запрошено"
+ },
+ "passport": {
+  "created": "2026-10-03T23:20:41",
+  "git_commit": "ae8824a",
+  "git_dirty": true,
+  "python": "3.12.10",
+  "packages": {
+   "sklearn": "1.9.1",
+   "numpy": "2.5.3",
+   "pandas": "3.0.6",
+   "scipy": "1.18.1"
+  },
+  "split": "forward_time9_gap89",
+  "dataset_meta": {
+   "source": "C:\\Kursovay\\diploma_fs\\data\\849_tetouan.csv",
+   "name": "tetouan",
+   "target": "Zone 1 Power Consumption",
+   "time_col": "DateTime",
+   "sample": 10000,
+   "time_format": null,
+   "drop": [
+    "Zone 2  Power Consumption",
+    "Zone 3  Power Consumption"
+   ],
+   "cat_cols": [],
+   "rows_file": 52416,
+   "dropped_empty_target": 0,
+   "n_unique_target": 5672,
+   "role": "main",
+   "status": "draft",
+   "uci_id": 849,
+   "horizon": "1h",
+   "known_ahead": []
+  }
+ },
+ "method": "sel_group_importance",
+ "stability": 0.5714285714285716,
+ "records": [
+  {
+   "fold": 1,
+   "n_train": 810,
+   "n_test": 899,
+   "test_from": "2017-11-04 20:10:00",
+   "test_to": "2017-11-11 01:50:00",
+   "features": [
+    "target.daily__lag144",
+    "cal.hour__sin",
+    "target.short__lag6"
+   ],
+   "n_features": 3,
+   "empty_selection": false,
+   "select_time": 0.9501238000002559,
+   "select_rows": 810,
+   "metrics": {
+    "glm": {
+     "r2": 0.9541801273983249,
+     "mae": 925.958210645758,
+     "rmse": 1250.1115248848976,
+     "mape": 0.03266724001664301,
+     "wape": 0.0321606065319581,
+     "n_eval": 899,
+     "fit_time": 0.007355499999903259,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9542149312071152,
+     "mae": 926.0633100548471,
+     "rmse": 1249.6366555191735,
+     "mape": 0.032675569072515544,
+     "wape": 0.032164256870281786,
+     "n_eval": 899,
+     "fit_time": 0.009146899999905145,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9571595313871132,
+     "mae": 877.6767949666295,
+     "rmse": 1208.7846230223986,
+     "mape": 0.032651926297581665,
+     "wape": 0.030483684620569163,
+     "n_eval": 899,
+     "fit_time": 0.5821732999993401,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9606633038128698,
+     "mae": 833.8997704092822,
+     "rmse": 1158.2992125794235,
+     "mape": 0.0312137964275866,
+     "wape": 0.02896321032081987,
+     "n_eval": 899,
+     "fit_time": 0.7754148000003624,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.25172298995322046,
+     "cal.dow": 0.000739459822744104,
+     "cal.weekend": 0.0,
+     "cal.month": 2.249050436753386e-06,
+     "target.short": 0.0057839166889660735,
+     "target.daily": 0.8544507146569874,
+     "target.rolling": 0.003294592932980156,
+     "Temperature": 0.0011059644938969048,
+     "Humidity": 0.0006959395112629441,
+     "Wind Speed": 9.250845758181913e-05,
+     "general diffuse flows": 0.00029489860340523586,
+     "diffuse flows": 0.0004916353589502931
+    }
+   }
+  },
+  {
+   "fold": 2,
+   "n_train": 1709,
+   "n_test": 899,
+   "test_from": "2017-11-11 02:00:00",
+   "test_to": "2017-11-17 07:40:00",
+   "features": [
+    "target.daily__lag144",
+    "target.short__lag6",
+    "cal.hour__sin"
+   ],
+   "n_features": 3,
+   "empty_selection": false,
+   "select_time": 1.1774650999996084,
+   "select_rows": 1709,
+   "metrics": {
+    "glm": {
+     "r2": 0.9538947904720902,
+     "mae": 910.4964962050433,
+     "rmse": 1254.5436548601558,
+     "mape": 0.03242586767271919,
+     "wape": 0.03178435566193143,
+     "n_eval": 899,
+     "fit_time": 0.009937599999830127,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9539057968501963,
+     "mae": 910.5848519339229,
+     "rmse": 1254.3939016530164,
+     "mape": 0.03242942421303997,
+     "wape": 0.03178744005591118,
+     "n_eval": 899,
+     "fit_time": 0.010345499999857566,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9629791983700697,
+     "mae": 776.0946001098442,
+     "rmse": 1124.1743903469926,
+     "mape": 0.027924635768014974,
+     "wape": 0.027092544452406758,
+     "n_eval": 899,
+     "fit_time": 0.6389054999999644,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9677024610462743,
+     "mae": 744.2423674209075,
+     "rmse": 1050.014976627427,
+     "mape": 0.026939277067092367,
+     "wape": 0.025980620687041964,
+     "n_eval": 899,
+     "fit_time": 0.6300535999998829,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.029588748405011068,
+     "cal.dow": 0.0026575482641445934,
+     "cal.weekend": 0.0,
+     "cal.month": 7.35735114484548e-05,
+     "target.short": 0.03003357521326395,
+     "target.daily": 1.3538576693465505,
+     "target.rolling": 0.004247152532599441,
+     "Temperature": 0.0010914850010677712,
+     "Humidity": 0.0010264001132814116,
+     "Wind Speed": 0.00034760116665866203,
+     "general diffuse flows": 0.0004548543117781856,
+     "diffuse flows": 0.0006629222689115589
+    }
+   }
+  },
+  {
+   "fold": 3,
+   "n_train": 2608,
+   "n_test": 899,
+   "test_from": "2017-11-17 07:50:00",
+   "test_to": "2017-11-23 13:30:00",
+   "features": [
+    "target.daily__lag144",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "target.rolling__mean6"
+   ],
+   "n_features": 4,
+   "empty_selection": false,
+   "select_time": 1.2422261000001527,
+   "select_rows": 2608,
+   "metrics": {
+    "glm": {
+     "r2": 0.9515630105940711,
+     "mae": 915.4376758931203,
+     "rmse": 1287.5046859911063,
+     "mape": 0.031812107559161085,
+     "wape": 0.031921178667761306,
+     "n_eval": 899,
+     "fit_time": 0.008254800000031537,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9515546311784504,
+     "mae": 915.7513851654462,
+     "rmse": 1287.6160478909294,
+     "mape": 0.03182657514240448,
+     "wape": 0.03193211766447879,
+     "n_eval": 899,
+     "fit_time": 0.011203199999727076,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9741088185963299,
+     "mae": 574.9270434524472,
+     "rmse": 941.317605198139,
+     "mape": 0.020691386993367575,
+     "wape": 0.02004762241959115,
+     "n_eval": 899,
+     "fit_time": 0.72226529999989,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9745577909559096,
+     "mae": 592.9010089822334,
+     "rmse": 933.1203391083881,
+     "mape": 0.021510267716174446,
+     "wape": 0.02067437198447521,
+     "n_eval": 899,
+     "fit_time": 1.0612169999994876,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.11858578026482465,
+     "cal.dow": 0.0036472997790887307,
+     "cal.weekend": 0.0,
+     "cal.month": 2.725855378338249e-05,
+     "target.short": 0.03180167818196775,
+     "target.daily": 0.9949712959696042,
+     "target.rolling": 0.005349788439902437,
+     "Temperature": 0.0021201860282498374,
+     "Humidity": 0.0011541529711919906,
+     "Wind Speed": 0.00040725940336863167,
+     "general diffuse flows": 0.0007632690751863347,
+     "diffuse flows": 0.0010581264825882508
+    }
+   }
+  },
+  {
+   "fold": 4,
+   "n_train": 3507,
+   "n_test": 899,
+   "test_from": "2017-11-23 13:40:00",
+   "test_to": "2017-11-29 19:20:00",
+   "features": [
+    "target.daily__lag144",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "cal.dow__sin"
+   ],
+   "n_features": 4,
+   "empty_selection": false,
+   "select_time": 3.086617799999658,
+   "select_rows": 3507,
+   "metrics": {
+    "glm": {
+     "r2": 0.9665272444235607,
+     "mae": 800.4562335161487,
+     "rmse": 1103.3898512796477,
+     "mape": 0.0274340266088253,
+     "wape": 0.02724763295160202,
+     "n_eval": 899,
+     "fit_time": 0.013159999999516003,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.966523323614567,
+     "mae": 800.5906145140636,
+     "rmse": 1103.4544718060913,
+     "mape": 0.027438589687640055,
+     "wape": 0.0272522072980229,
+     "n_eval": 899,
+     "fit_time": 0.019815200000266486,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9757563433489067,
+     "mae": 622.1406118026974,
+     "rmse": 939.0361559550889,
+     "mape": 0.021604705292687185,
+     "wape": 0.021177746296285202,
+     "n_eval": 899,
+     "fit_time": 1.2546400000001086,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9769456346390631,
+     "mae": 625.6839630931125,
+     "rmse": 915.7139656905842,
+     "mape": 0.021755566683726472,
+     "wape": 0.021298362429106994,
+     "n_eval": 899,
+     "fit_time": 1.2768905000002633,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.1877700500043267,
+     "cal.dow": 0.006424617275044975,
+     "cal.weekend": 0.0,
+     "cal.month": -1.2467129945448185e-05,
+     "target.short": 0.03596978198129654,
+     "target.daily": 0.8151601220760571,
+     "target.rolling": 0.004182555780692443,
+     "Temperature": 0.00124712688499935,
+     "Humidity": 0.0017770783177508465,
+     "Wind Speed": 0.001012802086980491,
+     "general diffuse flows": 0.0020592628092341416,
+     "diffuse flows": 0.002116906128285789
+    }
+   }
+  },
+  {
+   "fold": 5,
+   "n_train": 4406,
+   "n_test": 899,
+   "test_from": "2017-11-29 19:30:00",
+   "test_to": "2017-12-06 01:10:00",
+   "features": [
+    "target.daily__lag144",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "cal.dow__sin"
+   ],
+   "n_features": 4,
+   "empty_selection": false,
+   "select_time": 3.8830361999998786,
+   "select_rows": 4406,
+   "metrics": {
+    "glm": {
+     "r2": 0.9248066501866963,
+     "mae": 1216.8234972215566,
+     "rmse": 1650.3717939548624,
+     "mape": 0.043176356312267156,
+     "wape": 0.042683725437761014,
+     "n_eval": 899,
+     "fit_time": 0.014160800000354357,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9248321072337996,
+     "mae": 1216.720994272086,
+     "rmse": 1650.0923999048844,
+     "mape": 0.043173556844477115,
+     "wape": 0.042680129840074285,
+     "n_eval": 899,
+     "fit_time": 0.021173500000259082,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9676378477329347,
+     "mae": 776.3435972142659,
+     "rmse": 1082.7065763955368,
+     "mape": 0.028883888808795718,
+     "wape": 0.027232574834823307,
+     "n_eval": 899,
+     "fit_time": 1.1931422999996357,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9664795133298165,
+     "mae": 795.8307211557062,
+     "rmse": 1101.9128151562486,
+     "mape": 0.02938838593131365,
+     "wape": 0.027916144021141058,
+     "n_eval": 899,
+     "fit_time": 1.449655200000052,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.20224751368832408,
+     "cal.dow": 0.005965872196336463,
+     "cal.weekend": 0.0,
+     "cal.month": 1.226387052386535e-05,
+     "target.short": 0.03833519779416998,
+     "target.daily": 0.8018468694763115,
+     "target.rolling": 0.004914389625890791,
+     "Temperature": 0.0015595033316279094,
+     "Humidity": 0.0017116196323197386,
+     "Wind Speed": 0.0012408279204434436,
+     "general diffuse flows": 0.0016415855919043264,
+     "diffuse flows": 0.0012932970437417924
+    }
+   }
+  },
+  {
+   "fold": 6,
+   "n_train": 5305,
+   "n_test": 898,
+   "test_from": "2017-12-06 01:20:00",
+   "test_to": "2017-12-12 06:50:00",
+   "features": [
+    "target.daily__lag1008",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "cal.dow__sin",
+    "target.rolling__mean6"
+   ],
+   "n_features": 5,
+   "empty_selection": false,
+   "select_time": 3.369077400000606,
+   "select_rows": 5000,
+   "metrics": {
+    "glm": {
+     "r2": 0.9485480938373646,
+     "mae": 1064.2304253042096,
+     "rmse": 1387.7120276235405,
+     "mape": 0.03608540130946751,
+     "wape": 0.03690318184306781,
+     "n_eval": 898,
+     "fit_time": 0.016342200000508456,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9484935439344769,
+     "mae": 1064.72361789792,
+     "rmse": 1388.4474668738164,
+     "mape": 0.036103743248108264,
+     "wape": 0.03692028375590228,
+     "n_eval": 898,
+     "fit_time": 0.02213060000030964,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9750317843387863,
+     "mae": 731.1339160070991,
+     "rmse": 966.7014531249707,
+     "mape": 0.02633585829628991,
+     "wape": 0.025352749942599787,
+     "n_eval": 898,
+     "fit_time": 1.343764000000192,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9738438219458084,
+     "mae": 742.4559837602213,
+     "rmse": 989.4315635246828,
+     "mape": 0.02631027773665528,
+     "wape": 0.025745353193924396,
+     "n_eval": 898,
+     "fit_time": 1.8399009000004298,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.23115733227496515,
+     "cal.dow": 0.007301590510076883,
+     "cal.weekend": 0.0,
+     "cal.month": 0.0004484965416799991,
+     "target.short": 0.04530244497505283,
+     "target.daily": 0.6300952047592978,
+     "target.rolling": 0.006097942382496191,
+     "Temperature": 0.0014089607274958781,
+     "Humidity": 0.001809420400173889,
+     "Wind Speed": 0.0012993451702284719,
+     "general diffuse flows": 0.0032961481548003935,
+     "diffuse flows": 0.0016873540064464177
+    }
+   }
+  },
+  {
+   "fold": 7,
+   "n_train": 6203,
+   "n_test": 898,
+   "test_from": "2017-12-12 07:00:00",
+   "test_to": "2017-12-18 12:30:00",
+   "features": [
+    "target.daily__lag1008",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "target.rolling__mean6",
+    "cal.dow__sin"
+   ],
+   "n_features": 5,
+   "empty_selection": false,
+   "select_time": 3.37247699999989,
+   "select_rows": 5000,
+   "metrics": {
+    "glm": {
+     "r2": 0.977867335687443,
+     "mae": 694.9990627662581,
+     "rmse": 907.9481095583303,
+     "mape": 0.023664155235262663,
+     "wape": 0.023975565164351384,
+     "n_eval": 898,
+     "fit_time": 0.016916600000513426,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9778733217006453,
+     "mae": 695.0411541395323,
+     "rmse": 907.8253191696213,
+     "mape": 0.023668702599473332,
+     "wape": 0.023977017201507772,
+     "n_eval": 898,
+     "fit_time": 0.06396440000025905,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9917219383646909,
+     "mae": 439.86126689379176,
+     "rmse": 555.2754950890921,
+     "mape": 0.01602093352555036,
+     "wape": 0.015174009624863425,
+     "n_eval": 898,
+     "fit_time": 1.828070900000057,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9919403017975227,
+     "mae": 441.54746369452914,
+     "rmse": 547.9028633772009,
+     "mape": 0.01620032301361227,
+     "wape": 0.015232178798667903,
+     "n_eval": 898,
+     "fit_time": 1.8681471999998394,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.3020132199478406,
+     "cal.dow": 0.0056730320283025605,
+     "cal.weekend": 0.0,
+     "cal.month": 0.00013441085292815736,
+     "target.short": 0.06197189882029228,
+     "target.daily": 0.5215687869129972,
+     "target.rolling": 0.008389566054910568,
+     "Temperature": 0.0013441499877302255,
+     "Humidity": 0.0013128044247986636,
+     "Wind Speed": 0.001086621303198121,
+     "general diffuse flows": 0.0011076153791687916,
+     "diffuse flows": 0.0011071210789017848
+    }
+   }
+  },
+  {
+   "fold": 8,
+   "n_train": 7101,
+   "n_test": 898,
+   "test_from": "2017-12-18 12:40:00",
+   "test_to": "2017-12-24 18:10:00",
+   "features": [
+    "target.daily__lag1008",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "target.rolling__mean6",
+    "cal.dow__raw"
+   ],
+   "n_features": 5,
+   "empty_selection": false,
+   "select_time": 1.88884120000057,
+   "select_rows": 5000,
+   "metrics": {
+    "glm": {
+     "r2": 0.9820426613255399,
+     "mae": 621.0498893544453,
+     "rmse": 835.8099495162271,
+     "mape": 0.020737797327553063,
+     "wape": 0.021220639305134032,
+     "n_eval": 898,
+     "fit_time": 0.013102599999911035,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9820520822143309,
+     "mae": 621.0863575745514,
+     "rmse": 835.5906768908493,
+     "mape": 0.020741095990231773,
+     "wape": 0.021221885386903363,
+     "n_eval": 898,
+     "fit_time": 0.019802599999820814,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.9933436074643494,
+     "mae": 395.0355429837138,
+     "rmse": 508.8690207304832,
+     "mape": 0.014026183061830672,
+     "wape": 0.013497960331461991,
+     "n_eval": 898,
+     "fit_time": 0.9532140999999683,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.994146734941745,
+     "mae": 376.1332749945633,
+     "rmse": 477.18374965619887,
+     "mape": 0.013352534717717978,
+     "wape": 0.012852089173729897,
+     "n_eval": 898,
+     "fit_time": 1.3020606999998563,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.16101022695472056,
+     "cal.dow": 0.005575823068842034,
+     "cal.weekend": 0.0,
+     "cal.month": 0.0002682865660113221,
+     "target.short": 0.06004454271064848,
+     "target.daily": 0.6814902152382037,
+     "target.rolling": 0.007870028497817682,
+     "Temperature": 0.0010601880994116186,
+     "Humidity": 0.002025291477193236,
+     "Wind Speed": 0.000844707084411489,
+     "general diffuse flows": 0.0013500760481747864,
+     "diffuse flows": 0.001420366250379268
+    }
+   }
+  },
+  {
+   "fold": 9,
+   "n_train": 7999,
+   "n_test": 898,
+   "test_from": "2017-12-24 18:20:00",
+   "test_to": "2017-12-30 23:50:00",
+   "features": [
+    "target.daily__lag1008",
+    "cal.hour__sin",
+    "target.short__lag6",
+    "target.rolling__mean6"
+   ],
+   "n_features": 4,
+   "empty_selection": false,
+   "select_time": 2.453348500001084,
+   "select_rows": 5000,
+   "metrics": {
+    "glm": {
+     "r2": 0.9783580771246536,
+     "mae": 672.2109566855647,
+     "rmse": 930.5574786135396,
+     "mape": 0.021808418287640022,
+     "wape": 0.022537579748758224,
+     "n_eval": 898,
+     "fit_time": 0.013714700000491575,
+     "backend": "sklearn"
+    },
+    "ridge": {
+     "r2": 0.9783667727943515,
+     "mae": 672.1293140251726,
+     "rmse": 930.3705120141067,
+     "mape": 0.021807112639223983,
+     "wape": 0.022534842471194996,
+     "n_eval": 898,
+     "fit_time": 0.020587799999702838,
+     "backend": "sklearn"
+    },
+    "xgboost": {
+     "r2": 0.989362071259472,
+     "mae": 452.1722372800669,
+     "rmse": 652.4148228884558,
+     "mape": 0.015210443358931711,
+     "wape": 0.015160222779053633,
+     "n_eval": 898,
+     "fit_time": 1.3257893999998487,
+     "backend": "xgboost"
+    },
+    "catboost": {
+     "r2": 0.9889393186278689,
+     "mae": 477.32318923624695,
+     "rmse": 665.2520508781643,
+     "mape": 0.015887682186848093,
+     "wape": 0.016003472327178362,
+     "n_eval": 898,
+     "fit_time": 1.8669588999982807,
+     "backend": "catboost"
+    }
+   },
+   "info": {
+    "group_importance": {
+     "cal.hour": 0.1992570112077062,
+     "cal.dow": 0.0028653430655306124,
+     "cal.weekend": 0.0,
+     "cal.month": 0.00019736233486924437,
+     "target.short": 0.05507040071821525,
+     "target.daily": 0.6385089154911624,
+     "target.rolling": 0.007762323654572012,
+     "Temperature": 0.0013810874740789014,
+     "Humidity": 0.001463293288035472,
+     "Wind Speed": 0.0006980472218825584,
+     "general diffuse flows": 0.0011731642563986623,
+     "diffuse flows": 0.0008845041089112326
+    }
+   }
+  }
+ ]
+}
