@@ -48,6 +48,11 @@
 
 - [x] Формат согласован и подтверждён автором (29.09.2026), образец строит `scripts/make_report_sample.py`.
 - Все принятые решения по ветке — `docs/DECISIONS_FORECAST.md`.
-- [ ] Добавить в код модели `glm` и `xgboost`.
-- [ ] Поле `labels` в реестре для steel и tetouan; `describe()` для признаков.
-- [ ] Перевести `report_forecast.py` на этот формат (MD + PDF).
+- [x] Добавить в код модели `glm` и `xgboost`.
+- [x] Поле `labels` в реестре для steel и tetouan; `describe()` для признаков.
+- [x] Перевести `report_forecast.py` на этот формат (MD + PDF).
+
+Сборка: `python scripts/run_forecast.py --dataset steel tetouan`, затем
+`python scripts/report_forecast.py --dataset steel tetouan` → `docs/FORECAST_REPORT.md`,
+`docs/FORECAST_REPORT.pdf` (в git не попадает) и `docs/hypotheses/RESULTS.md` — сводка
+по гипотезам E1–E4 отдельно от отчёта.
