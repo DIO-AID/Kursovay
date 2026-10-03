@@ -56,6 +56,7 @@ def rows_of(runs):
             rows.append(dict(dataset=r["dataset"], model=r["model"], es_mode=r["es_mode"], fold=r["fold"],
                              budget=b["budget"], default=r["default"]["test_mae"], tuned=b["test_mae"],
                              val=b["val_mae"], vs_default=pct(b["test_mae"], r["default"]["test_mae"]),
+                             vs_default_refit=pct(b.get("refit_test_mae", b["test_mae"]), r["default"]["test_mae"]),
                              optimism=pct(b["test_mae"], b["val_mae"]),
                              regret=pct(b["test_mae"], b["oracle_test_mae"]), rho=rho, n_iter=b["n_iter"],
                              naive=r["reference"]["naive_last"], ridge=r["reference"]["ridge"],
@@ -72,16 +73,21 @@ def group(rows, keys):
 
 def main_table(rows, md):
     md += ["| датасет | модель | остановка | попыток | стандартная | настроенная | изменение | хуже стандартной | "
+           "изменение при обучении на всех данных | "
            "ошибка на проверке | будущее против проверки | связь проверка ↔ будущее | потеря к лучшей попытке | время |",
-           "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for (d, m, e, b), rs in sorted(group(rows, ("dataset", "model", "es_mode", "budget")).items()):
         worse = sum(r["vs_default"] > 0 for r in rs)
         md.append(f"| {d} | {MODEL.get(m, m)} | {ES.get(e, e)} | {b} | {med([r['default'] for r in rs]):.2f} | "
                   f"{med([r['tuned'] for r in rs]):.2f} | {med([r['vs_default'] for r in rs]):+.1f}% | "
-                  f"{worse} из {len(rs)} | {med([r['val'] for r in rs]):.2f} | {med([r['optimism'] for r in rs]):+.0f}% | "
+                  f"{worse} из {len(rs)} | {med([r['vs_default_refit'] for r in rs]):+.1f}% | "
+                  f"{med([r['val'] for r in rs]):.2f} | {med([r['optimism'] for r in rs]):+.0f}% | "
                   f"{med([r['rho'] for r in rs]):.2f} | {med([r['regret'] for r in rs]):+.1f}% | "
                   f"{med([r['time'] for r in rs]):.0f} с |")
     md += ["", "Как читать: «изменение» — ошибка настроенной модели к стандартной на будущем отрезке (минус — лучше); "
+               "«настроенная» — модель лучшей попытки как в базовом проекте (обучена на 80% обучающих строк); "
+               "«изменение при обучении на всех данных» — те же настройки, но обучение на всех обучающих строках, "
+               "как у стандартной (честное сравнение настроек, а не объёма данных); "
                "«будущее против проверки» — на сколько реальная ошибка выше той, что видела Optuna (большой плюс — самообман); "
                "«связь» — от −1 до 1: насколько оценка на проверке предсказывает ошибку на будущем; "
                "«потеря» — на сколько выбранная попытка хуже лучшей из сделанных. Все числа — медианы по отрезкам времени.", ""]
@@ -119,15 +125,17 @@ def verdict_trials(rows, md):
             o_lo.append(a[budgets[0]]["optimism"])
             o_hi.append(a[hi]["optimism"])
     md += ["## Гипотеза «Число попыток»", "",
-           "| попыток | изменение к стандартной | хуже стандартной | будущее против проверки |", "|---|---|---|---|"]
+           "| попыток | изменение к стандартной | хуже стандартной | при обучении на всех данных | "
+           "будущее против проверки |", "|---|---|---|---|---|"]
     for b in budgets:
         rs = [r for r in rows if r["budget"] == b]
         md.append(f"| {b} | {med([r['vs_default'] for r in rs]):+.1f}% | "
-                  f"{sum(r['vs_default'] > 0 for r in rs)} из {len(rs)} | {med([r['optimism'] for r in rs]):+.0f}% |")
+                  f"{sum(r['vs_default'] > 0 for r in rs)} из {len(rs)} | "
+                  f"{med([r['vs_default_refit'] for r in rs]):+.1f}% | {med([r['optimism'] for r in rs]):+.0f}% |")
     ok = med(dv) <= -2.0 and med(dt) > -1.0 and med(o_hi) > med(o_lo)
     md += ["", f"От {lo} к {hi} попыткам: ошибка на проверке изменилась на {med(dv):+.1f}%, ошибка на будущем — на "
                f"{med(dt):+.1f}% ({words(paired([0] * len(dt), dt))}); самообман: {med(o_lo):+.0f}% → {med(o_hi):+.0f}%.",
-           f"**Вывод:** гипотеза {'подтверждается' if ok else 'НЕ подтверждается'} "
+           f"**Вывод:** гипотеза {'подтверждается' if ok else 'НЕ подтверждается'} по медианам на {len(dt)} наблюдениях "
            "(критерий: проверка улучшается на ≥ 2%, будущее — меньше чем на 1%, самообман растёт).", ""]
 
 
@@ -144,17 +152,21 @@ def verdict_es(rows, md):
             d_opt.append(a["shared"]["optimism"] - a["separate"]["optimism"])
             d_test.append(pct(a["separate"]["tuned"], a["shared"]["tuned"]))
     md += ["## Гипотеза «Ранняя остановка»", "",
-           "| остановка | изменение к стандартной | хуже стандартной | будущее против проверки | деревьев |",
-           "|---|---|---|---|---|"]
+           "| остановка | изменение к стандартной | хуже стандартной | при обучении на всех данных | "
+           "будущее против проверки | деревьев |", "|---|---|---|---|---|---|"]
     for e in modes:
         rs = [r for r in rows if r["es_mode"] == e and r["budget"] == b]
         md.append(f"| {ES.get(e, e)} | {med([r['vs_default'] for r in rs]):+.1f}% | "
-                  f"{sum(r['vs_default'] > 0 for r in rs)} из {len(rs)} | {med([r['optimism'] for r in rs]):+.0f}% | "
+                  f"{sum(r['vs_default'] > 0 for r in rs)} из {len(rs)} | "
+                  f"{med([r['vs_default_refit'] for r in rs]):+.1f}% | {med([r['optimism'] for r in rs]):+.0f}% | "
                   f"{med([r['n_iter'] for r in rs]):.0f} |")
     ok = med(d_opt) >= 3.0 and med(d_test) <= 1.0
+    p = paired(d_opt, [0] * len(d_opt))
+    verdict = "НЕ подтверждается" if not ok else ("подтверждается" if p is not None and p < 0.05 else
+                                                  "подтверждается по медианам, но различие статистически не доказано")
     md += ["", f"Отдельная выборка вместо общей: самообман меньше на {med(d_opt):.1f} процентных пункта "
-               f"({words(paired(d_opt, [0] * len(d_opt)))}), ошибка на будущем изменилась на {med(d_test):+.1f}%.",
-           f"**Вывод:** гипотеза {'подтверждается' if ok else 'НЕ подтверждается'} "
+               f"({words(p)}), ошибка на будущем изменилась на {med(d_test):+.1f}%. Наблюдений: {len(d_opt)}.",
+           f"**Вывод:** гипотеза {verdict} "
            "(критерий: самообман меньше на ≥ 3 п.п., ошибка на будущем не хуже чем на 1%).", ""]
 
 
@@ -174,7 +186,9 @@ def main():
           f"Настроенные модели против стандартных на будущих данных: медианное изменение ошибки "
           f"{med([r['vs_default'] for r in last]):+.1f}%; настройка оказалась хуже стандартной в "
           f"{sum(r['vs_default'] > 0 for r in last)} случаях из {len(last)}. Реальная ошибка выше той, что видела Optuna, "
-          f"на {med([r['optimism'] for r in last]):+.0f}% (медиана).", "",
+          f"на {med([r['optimism'] for r in last]):+.0f}% (медиана). Если те же настройки обучить на всех обучающих "
+          f"строках (как стандартную): {med([r['vs_default_refit'] for r in last]):+.1f}%, хуже стандартной в "
+          f"{sum(r['vs_default_refit'] > 0 for r in last)} из {len(last)}.", "",
           "## Условия", "",
           f"- датасеты: {', '.join(sorted({r['dataset'] for r in rows}))}; прогноз на 1 час вперёд "
           f"(только прошлые данные); отрезков времени на датасет: {len({r['fold'] for r in rows})}",
